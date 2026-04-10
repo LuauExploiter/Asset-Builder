@@ -1,25 +1,11 @@
 --[[
-	Hiklo Serializer v3
-	loadstring compatible module.
-
-	Usage:
-		local S = loadstring(game:HttpGet("..."))()
-		S.Path = game.Workspace.MyModel
-		local Code = S:Build()
-		S:Save()
---]]
-
-------------------------------------------------------------------------
--- SERVICES
-------------------------------------------------------------------------
+	Hiklo Serializer v3.1
+	- Fixed Enum.Style error.
+	- Characters (models containing Humanoid) are rejected.
+]]
 
 local CollectionService = game:GetService("CollectionService")
-
-------------------------------------------------------------------------
--- CONSTANTS
-------------------------------------------------------------------------
-
-local VERSION = "3.0.0"
+local VERSION = "3.1.0"
 
 local SkipProperties = {
 	Parent                = true,
@@ -34,7 +20,6 @@ local SkipProperties = {
 	DescendantAdded       = true,
 	DescendantRemoving    = true,
 	AttributeChanged      = true,
-	-- Read-only runtime props
 	AbsolutePosition      = true,
 	AbsoluteSize          = true,
 	AbsoluteRotation      = true,
@@ -58,10 +43,9 @@ local SkipProperties = {
 	IsPaused              = true,
 	IsPlaying             = true,
 	TimeLength            = true,
-	SoundId               = true, -- avoid duplicate with below; handled explicitly
+	SoundId               = true,
 }
 
--- Properties that are serializable but should be skipped for certain classes
 local ClassSkipProperties = {
 	Humanoid = {
 		Health         = true,
@@ -82,10 +66,6 @@ local ClassSkipProperties = {
 		AssemblyLinearVelocity = true,
 	},
 }
-
-------------------------------------------------------------------------
--- FALLBACK PROPERTY DEFINITIONS
-------------------------------------------------------------------------
 
 local FallbackProperties = {}
 
@@ -122,7 +102,8 @@ FallbackProperties["Part"] = {
 
 FallbackProperties["WedgePart"]         = {}
 FallbackProperties["CornerWedgePart"]   = {}
-FallbackProperties["TrussPart"]         = { Style = Enum.Style.Studs }
+-- FIXED: Removed invalid Enum.Style reference
+FallbackProperties["TrussPart"]         = {}
 FallbackProperties["SpawnLocation"]     = { AllowTeamChangeOnTouch = false, Duration = 10, Enabled = true, Neutral = true, TeamColor = BrickColor.new("White") }
 FallbackProperties["Platform"]          = {}
 FallbackProperties["Seat"]              = { Disabled = false }
@@ -330,10 +311,9 @@ FallbackProperties["ParticleEmitter"] = {
 	ZOffset           = 0,
 }
 
--- Constraints
 local ConstraintBase = { Enabled = true, Visible = false, Color = BrickColor.new("Bright blue") }
 
-FallbackProperties["RopeConstraint"]    = { table.unpack and table.unpack({}) or nil,
+FallbackProperties["RopeConstraint"]    = {
 	Attachment0 = nil, Attachment1 = nil, Color = BrickColor.new("Bright blue"),
 	Enabled = true, Length = 5, Restitution = 0, Thickness = 0.1, Visible = false,
 }
@@ -396,7 +376,6 @@ FallbackProperties["Snap"]             = { C0 = CFrame.new(), C1 = CFrame.new(),
 FallbackProperties["ManualWeld"]       = { C0 = CFrame.new(), C1 = CFrame.new(), Part0 = nil, Part1 = nil }
 FallbackProperties["ManualGlue"]       = { C0 = CFrame.new(), C1 = CFrame.new(), Part0 = nil, Part1 = nil }
 
--- Body movers (legacy)
 FallbackProperties["BodyVelocity"]     = { MaxForce = Vector3.new(4000,4000,4000), P = 10000, Velocity = Vector3.new() }
 FallbackProperties["BodyPosition"]     = { D = 500, MaxForce = Vector3.new(4000,4000,4000), P = 10000, Position = Vector3.new() }
 FallbackProperties["BodyForce"]        = { Force = Vector3.new() }
@@ -405,7 +384,6 @@ FallbackProperties["BodyGyro"]         = { CFrame = CFrame.new(), D = 500, MaxTo
 FallbackProperties["BodyThrust"]       = { Force = Vector3.new(), Location = Vector3.new() }
 FallbackProperties["RocketPropulsion"] = { CartoonFactor = 0.7, MaxSpeed = 50, MaxThrust = 4000, MaxTorque = Vector3.new(4000,4000,0), P = 10000, TargetOffset = Vector3.new(), TargetRadius = 4, ThrustD = 500, ThrustP = 100, TurnD = 500, TurnP = 100 }
 
--- Linear/Angular velocity constraints
 FallbackProperties["LinearVelocityConstraint"] = {
 	Attachment0 = nil, Attachment1 = nil, Color = BrickColor.new("Bright blue"),
 	Enabled = true, ForceLimitMode = Enum.ForceLimitMode.Magnitude,
@@ -441,12 +419,10 @@ FallbackProperties["AlignOrientation"] = {
 	SecondaryAxis = Vector3.new(1,0,0), Visible = false,
 }
 
--- Lighting
 FallbackProperties["PointLight"]   = { Brightness = 1, Color = Color3.new(1,1,1), Enabled = true, Range = 16, Shadows = false }
 FallbackProperties["SpotLight"]    = { Angle = 45, Brightness = 1, Color = Color3.new(1,1,1), Enabled = true, Face = Enum.NormalId.Front, Range = 16, Shadows = false }
 FallbackProperties["SurfaceLight"] = { Angle = 90, Brightness = 1, Color = Color3.new(1,1,1), Enabled = true, Face = Enum.NormalId.Front, Range = 16, Shadows = false }
 
--- Post-processing / atmosphere
 FallbackProperties["Atmosphere"] = { Color = Color3.fromRGB(199,199,199), Decay = Color3.fromRGB(255,255,255), Density = 0.395, Glare = 0, Haze = 0, Offset = 0 }
 FallbackProperties["Sky"]        = { CelestialBodiesShown = true, MoonAngularSize = 11, MoonTextureId = "", SkyboxBk = "", SkyboxDn = "", SkyboxFt = "", SkyboxLf = "", SkyboxRt = "", SkyboxUp = "", StarCount = 3000, SunAngularSize = 21, SunTextureId = "" }
 FallbackProperties["Bloom"]      = { Enabled = true, Intensity = 0.5, Size = 56, Threshold = 0.95 }
@@ -455,7 +431,6 @@ FallbackProperties["ColorCorrection"] = { Brightness = 0, Contrast = 0, Enabled 
 FallbackProperties["DepthOfField"] = { Enabled = true, FarIntensity = 0, FocusDistance = 50, InFocusRadius = 10, NearIntensity = 0 }
 FallbackProperties["SunRaysEffect"] = { Enabled = true, Intensity = 0.5, Spread = 1 }
 
--- Physics
 FallbackProperties["Humanoid"] = {
 	AutoJumpEnabled        = true,
 	AutoRotate             = true,
@@ -517,7 +492,6 @@ FallbackProperties["HumanoidDescription"] = {
 	WidthScale           = 1,
 }
 
--- UI core
 FallbackProperties["ScreenGui"]    = { ClipToDeviceSafeArea = false, DisplayOrder = 0, Enabled = true, IgnoreGuiInset = false, OnTopOfCoreBlur = false, ResetOnSpawn = true, ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets, ZIndexBehavior = Enum.ZIndexBehavior.Sibling }
 FallbackProperties["BillboardGui"] = { Active = false, AlwaysOnTop = false, Brightness = 1, ClipsDescendants = false, Enabled = true, ExtentsOffset = Vector2.new(), ExtentsOffsetWorldSpace = Vector3.new(), LightInfluence = 1, MaxDistance = 0, Size = UDim2.fromOffset(200,50), SizeOffset = Vector2.new(), StudsOffset = Vector3.new(), StudsOffsetWorldSpace = Vector3.new(), ZIndexBehavior = Enum.ZIndexBehavior.Sibling }
 FallbackProperties["SurfaceGui"]   = { Active = false, AlwaysOnTop = false, Brightness = 1, CanvasSize = Vector2.new(800,600), ClipsDescendants = false, Enabled = true, Face = Enum.NormalId.Front, LightInfluence = 1, PixelsPerStud = 20, SizingMode = Enum.SurfaceGuiSizingMode.FixedSize, ZIndexBehavior = Enum.ZIndexBehavior.Sibling }
@@ -576,7 +550,6 @@ FallbackProperties["VideoFrame"]    = { Looped = false, Playing = false, TimePos
 FallbackProperties["ViewportFrame"] = { Ambient = Color3.new(1,1,1), CurrentCamera = nil, ImageColor3 = Color3.new(1,1,1), ImageTransparency = 0, LightColor = Color3.new(1,1,1), LightDirection = Vector3.new(0,-1,-1) }
 FallbackProperties["CanvasGroup"]   = { GroupColor3 = Color3.new(1,1,1), GroupTransparency = 0 }
 
--- UI modifiers
 FallbackProperties["UICorner"]      = { CornerRadius = UDim.new(0,0) }
 FallbackProperties["UIStroke"]      = { ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Color = Color3.new(), Enabled = true, LineJoinMode = Enum.LineJoinMode.Round, Thickness = 1, Transparency = 0 }
 FallbackProperties["UIPadding"]     = { PaddingBottom = UDim.new(), PaddingLeft = UDim.new(), PaddingRight = UDim.new(), PaddingTop = UDim.new() }
@@ -591,7 +564,6 @@ FallbackProperties["UIFlexItem"]                = { FlexMode = Enum.UIFlexMode.N
 FallbackProperties["UIGradient"]                = { Color = ColorSequence.new(Color3.new(1,1,1)), Enabled = true, Offset = Vector2.new(), Rotation = 0, Transparency = NumberSequence.new(0) }
 FallbackProperties["UIScale"]                   = { Scale = 1 }
 
--- Selection / highlighting
 FallbackProperties["SelectionBox"]      = { Color3 = Color3.new(0,0,1), LineThickness = 0.1, SurfaceColor3 = Color3.new(0,0,1), SurfaceTransparency = 0.5, Visible = true }
 FallbackProperties["SelectionSphere"]   = { Color3 = Color3.new(0,0,1), SurfaceColor3 = Color3.new(0,0,1), SurfaceTransparency = 0.5, Visible = true }
 FallbackProperties["BoxHandleAdornment"] = { AlwaysOnTop = false, Color3 = Color3.new(1,1,1), Size = Vector3.new(1,1,1), SizeRelativeOffset = Vector3.new(), Transparency = 0, Visible = true, ZIndex = 0 }
@@ -600,20 +572,14 @@ FallbackProperties["ConeHandleAdornment"]   = { AlwaysOnTop = false, Color3 = Co
 FallbackProperties["CylinderHandleAdornment"] = { AlwaysOnTop = false, Color3 = Color3.new(1,1,1), Height = 1, InnerRadius = 0, Radius = 1, Transparency = 0, Visible = true, ZIndex = 0 }
 FallbackProperties["Highlight"]         = { DepthMode = Enum.HighlightDepthMode.AlwaysOnTop, Enabled = true, FillColor = Color3.new(1,1,1), FillTransparency = 0.5, OutlineColor = Color3.new(1,1,1), OutlineTransparency = 0 }
 
--- Misc commonly found instances
 FallbackProperties["RemoteEvent"]   = {}
 FallbackProperties["RemoteFunction"] = {}
 FallbackProperties["BindableEvent"] = {}
 FallbackProperties["BindableFunction"] = {}
 FallbackProperties["Configuration"] = {}
-FallbackProperties["NumberRange"]   = {} -- used as object sometimes
-
-------------------------------------------------------------------------
--- INHERITANCE CHAIN
-------------------------------------------------------------------------
+FallbackProperties["NumberRange"]   = {}
 
 local Inheritance = {
-	-- Parts
 	Part               = { "BasePart", "Instance" },
 	WedgePart          = { "BasePart", "Instance" },
 	CornerWedgePart    = { "BasePart", "Instance" },
@@ -624,13 +590,11 @@ local Inheritance = {
 	VehicleSeat        = { "BasePart", "Instance" },
 	MeshPart           = { "BasePart", "Instance" },
 	UnionOperation     = { "BasePart", "Instance" },
-	-- Mesh/textures
 	SpecialMesh        = { "Instance" },
 	CylinderMesh       = { "Instance" },
 	BlockMesh          = { "Instance" },
 	Decal              = { "Instance" },
 	Texture            = { "Instance" },
-	-- Structure
 	Model              = { "Instance" },
 	Folder             = { "Instance" },
 	Tool               = { "Instance" },
@@ -638,11 +602,9 @@ local Inheritance = {
 	StarterPack        = { "Instance" },
 	StarterGear        = { "Instance" },
 	Configuration      = { "Instance" },
-	-- Scripts
 	Script             = { "Instance" },
 	LocalScript        = { "Instance" },
 	ModuleScript       = { "Instance" },
-	-- Values
 	StringValue        = { "Instance" },
 	NumberValue        = { "Instance" },
 	BoolValue          = { "Instance" },
@@ -653,10 +615,8 @@ local Inheritance = {
 	Color3Value        = { "Instance" },
 	BrickColorValue    = { "Instance" },
 	RayValue           = { "Instance" },
-	-- Animation
 	Animation          = { "Instance" },
 	Animator           = { "Instance" },
-	-- Sound
 	Sound              = { "Instance" },
 	SoundService       = { "Instance" },
 	EqualizerSoundEffect   = { "Instance" },
@@ -668,7 +628,6 @@ local Inheritance = {
 	FlangeSoundEffect      = { "Instance" },
 	PitchShiftSoundEffect  = { "Instance" },
 	TremoloSoundEffect     = { "Instance" },
-	-- Physics
 	Attachment             = { "Instance" },
 	Bone                   = { "Attachment", "Instance" },
 	Beam                   = { "Instance" },
@@ -699,7 +658,6 @@ local Inheritance = {
 	Snap                   = { "Instance" },
 	ManualWeld             = { "Instance" },
 	ManualGlue             = { "Instance" },
-	-- Lighting
 	PointLight             = { "Instance" },
 	SpotLight              = { "Instance" },
 	SurfaceLight           = { "Instance" },
@@ -710,14 +668,11 @@ local Inheritance = {
 	ColorCorrection        = { "Instance" },
 	DepthOfField           = { "Instance" },
 	SunRaysEffect          = { "Instance" },
-	-- Humanoid
 	Humanoid               = { "Instance" },
 	HumanoidDescription    = { "Instance" },
-	-- UI containers
 	ScreenGui              = { "Instance" },
 	BillboardGui           = { "Instance" },
 	SurfaceGui             = { "Instance" },
-	-- UI elements (inherit GuiObjectBase via "GuiObject")
 	Frame                  = { "Instance" },
 	TextLabel              = { "Instance" },
 	TextButton             = { "Instance" },
@@ -728,7 +683,6 @@ local Inheritance = {
 	VideoFrame             = { "Instance" },
 	ViewportFrame          = { "Instance" },
 	CanvasGroup            = { "Instance" },
-	-- UI modifiers
 	UICorner               = { "Instance" },
 	UIStroke               = { "Instance" },
 	UIPadding              = { "Instance" },
@@ -742,7 +696,6 @@ local Inheritance = {
 	UIFlexItem             = { "Instance" },
 	UIGradient             = { "Instance" },
 	UIScale                = { "Instance" },
-	-- Selection
 	SelectionBox           = { "Instance" },
 	SelectionSphere        = { "Instance" },
 	BoxHandleAdornment     = { "Instance" },
@@ -750,14 +703,12 @@ local Inheritance = {
 	ConeHandleAdornment    = { "Instance" },
 	CylinderHandleAdornment = { "Instance" },
 	Highlight              = { "Instance" },
-	-- Misc
 	RemoteEvent            = { "Instance" },
 	RemoteFunction         = { "Instance" },
 	BindableEvent          = { "Instance" },
 	BindableFunction       = { "Instance" },
 }
 
--- Merge GuiObjectBase + TextBase into relevant classes at load time
 local GuiObjectClasses = { "Frame","TextLabel","TextButton","TextBox","ImageLabel","ImageButton","ScrollingFrame","VideoFrame","ViewportFrame","CanvasGroup" }
 local TextClasses      = { "TextLabel","TextButton","TextBox" }
 
@@ -770,10 +721,6 @@ for _, Class in ipairs(TextClasses) do
 	local T = FallbackProperties[Class]
 	for K, V in pairs(TextBase) do if T[K] == nil then T[K] = V end end
 end
-
-------------------------------------------------------------------------
--- PROPERTY RESOLVER
-------------------------------------------------------------------------
 
 local function ResolveFallbackProps(Inst)
 	local Merged  = {}
@@ -824,10 +771,6 @@ local function ResolveProps(Inst)
 	end
 	return Props
 end
-
-------------------------------------------------------------------------
--- SERIALIZER
-------------------------------------------------------------------------
 
 local function FmtNum(N)
 	if N ~= N            then return "0/0"           end
@@ -910,7 +853,6 @@ local function SerializeValue(Val, InstVarMap)
 			if X==0 and Y==0 and Z==0 then return "CFrame.new()" end
 			return string.format("CFrame.new(%s, %s, %s)", FmtNum(X), FmtNum(Y), FmtNum(Z))
 		end
-		-- Try angles form for cleaner output when no shear
 		local ok, AX, AY, AZ = pcall(function()
 			return Val:ToEulerAnglesXYZ()
 		end)
@@ -1110,12 +1052,20 @@ local function SerializeValue(Val, InstVarMap)
 	return nil
 end
 
-------------------------------------------------------------------------
--- BUILD
-------------------------------------------------------------------------
-
 local function Build(Target)
 	assert(typeof(Target) == "Instance", "[HikloSerializer] .Path must be a valid Instance")
+
+	-- 🚫 CHARACTER FILTER
+	if Target:IsA("Model") then
+		if Target:FindFirstChildOfClass("Humanoid") then
+			error("Characters (models with Humanoid) cannot be built.")
+		end
+		for _, child in ipairs(Target:GetDescendants()) do
+			if child:IsA("Humanoid") then
+				error("Characters (models with Humanoid) cannot be built.")
+			end
+		end
+	end
 
 	local Lines        = {}
 	local DeferredRefs = {}
@@ -1159,7 +1109,6 @@ local function Build(Target)
 		end
 	end
 
-	-- Header
 	Push("-- +-----------------------------------------------------------------+")
 	Push("-- |  Hiklo Serializer v%s                                       |", VERSION)
 	Push("-- |  Target    : %-50s|", Target:GetFullName():sub(1, 50))
@@ -1173,14 +1122,12 @@ local function Build(Target)
 		PushBlank()
 	end
 
-	-- Declarations
 	PushSection("Instance Declarations")
 	for _, Inst in ipairs(AllInsts) do
 		Push("local %-40s = Instance.new(%q)", InstVarMap[Inst], Inst.ClassName)
 	end
 	PushBlank()
 
-	-- Properties + Attributes
 	PushSection("Properties and Attributes")
 	for _, Inst in ipairs(AllInsts) do
 		local Var       = InstVarMap[Inst]
@@ -1217,7 +1164,6 @@ local function Build(Target)
 			end
 		end
 
-		-- Attributes
 		local AttrMap   = Inst:GetAttributes()
 		local AttrNames = {}
 		for K in pairs(AttrMap) do AttrNames[#AttrNames+1] = K end
@@ -1234,7 +1180,6 @@ local function Build(Target)
 			end
 		end
 
-		-- Tags
 		local Tags = CollectionService:GetTags(Inst)
 		if #Tags > 0 then
 			EnsureHeader()
@@ -1247,14 +1192,12 @@ local function Build(Target)
 		if HasContent then PushBlank() end
 	end
 
-	-- Deferred instance-valued references
 	if #DeferredRefs > 0 then
 		PushSection("Instance Reference Properties")
 		for _, Line in ipairs(DeferredRefs) do Push(Line) end
 		PushBlank()
 	end
 
-	-- Parent assignments
 	PushSection("Parent Assignments")
 	for _, Inst in ipairs(AllInsts) do
 		local ParentVar = InstVarMap[Inst.Parent]
@@ -1268,10 +1211,6 @@ local function Build(Target)
 
 	return table.concat(Lines, "\n")
 end
-
-------------------------------------------------------------------------
--- MODULE
-------------------------------------------------------------------------
 
 local HikloSerializer    = {}
 HikloSerializer.__index  = HikloSerializer
