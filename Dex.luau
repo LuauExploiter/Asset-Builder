@@ -5,7 +5,7 @@
 	Developed by Chillz
 	
 	Dex++ is a revival of Moon's Dex, made to fulfill Moon's Dex prophecy.
-    Generate Builder option developed by Hiklo, Credits to Chillz for the main dex script.
+      Generate Builder option developed by Hiklo, Credits to Chillz for the main dex script.
 ]]
 
 local selection
@@ -13619,10 +13619,7 @@ local function main()
 		execute.Text = "Execute"
 		execute.TextColor3 = Color3.new(1,1,1)
 		
-		local executeLoader = (env and type(env.loadstring) == "function" and env.loadstring)
-			or (type(loadstring) == "function" and loadstring)
-
-		if executeLoader then
+		if env.loadstring then
 			execute.TextColor3 = Color3.new(1,1,1)
 			execute.Interactable = true
 		else
@@ -13631,38 +13628,8 @@ local function main()
 		end
 
 		execute.MouseButton1Click:Connect(function()
-			local okSource, source = pcall(function()
-				return codeFrame:GetText()
-			end)
-			if not okSource then
-				ScriptViewer.ViewCode("-- Execute Error:\n-- " .. tostring(source), "Notepad")
-				return
-			end
-
-			local loader = (env and type(env.loadstring) == "function" and env.loadstring)
-				or (type(loadstring) == "function" and loadstring)
-			if not loader then
-				ScriptViewer.ViewCode("-- Execute Error:\n-- loadstring is not available in this executor.", "Notepad")
-				return
-			end
-
-			local okCompile, compiledOrErr = pcall(function()
-				return loader(source)
-			end)
-			if not okCompile then
-				ScriptViewer.ViewCode("-- Execute Error:\n-- " .. tostring(compiledOrErr), "Notepad")
-				return
-			end
-
-			if type(compiledOrErr) ~= "function" then
-				ScriptViewer.ViewCode("-- Execute Error:\n-- " .. tostring(compiledOrErr), "Notepad")
-				return
-			end
-
-			local ran, runtimeErr = pcall(compiledOrErr)
-			if not ran then
-				ScriptViewer.ViewCode("-- Runtime Error:\n-- " .. tostring(runtimeErr), "Notepad")
-			end
+			local source = codeFrame:GetText()
+			env.loadstring(source)()
 		end)
 
 		clear = Instance.new("TextButton",window.GuiElems.Content)
