@@ -13629,7 +13629,24 @@ local function main()
 
 		execute.MouseButton1Click:Connect(function()
 			local source = codeFrame:GetText()
-			env.loadstring(source)()
+			local loader = env.loadstring
+			if type(loader) ~= "function" then return end
+
+			local ok, compiled, compileErr = pcall(loader, source)
+			if not ok then
+				ScriptViewer.ViewCode("-- Execute Error:\n-- " .. tostring(compiled), "Notepad")
+				return
+			end
+
+			if type(compiled) ~= "function" then
+				ScriptViewer.ViewCode("-- Execute Error:\n-- " .. tostring(compileErr or compiled), "Notepad")
+				return
+			end
+
+			local ran, runtimeErr = pcall(compiled)
+			if not ran then
+				ScriptViewer.ViewCode("-- Runtime Error:\n-- " .. tostring(runtimeErr), "Notepad")
+			end
 		end)
 
 		clear = Instance.new("TextButton",window.GuiElems.Content)
