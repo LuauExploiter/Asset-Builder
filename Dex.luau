@@ -1759,13 +1759,31 @@ local function main()
 		-- context:AddRegistered("GET_REFERENCES")
 		context:AddRegistered("COPY_API_PAGE")
 
-		if #sList == 1 and sList[1] and sList[1].Obj then
-			local obj = sList[1].Obj
-			local canGenerate = presentClasses["BasePart"] or presentClasses["Model"] or presentClasses["Tool"] or presentClasses["Folder"]
-			if canGenerate and not (presentClasses["Model"] and obj:FindFirstChildWhichIsA("Humanoid", true)) then
-				context:AddDivider()
-				context:AddRegistered("GENERATE_BUILDER")
+		local canGenerateBuilder = #sList > 0
+		if canGenerateBuilder then
+			for _, item in ipairs(sList) do
+				local obj = item and item.Obj
+				if not obj then
+					canGenerateBuilder = false
+					break
+				end
+
+				local supported = obj:IsA("BasePart") or obj:IsA("Model") or obj:IsA("Tool") or obj:IsA("Folder")
+				if not supported then
+					canGenerateBuilder = false
+					break
+				end
+
+				if obj:IsA("Model") and obj:FindFirstChildWhichIsA("Humanoid", true) then
+					canGenerateBuilder = false
+					break
+				end
 			end
+		end
+
+		if canGenerateBuilder then
+			context:AddDivider()
+			context:AddRegistered("GENERATE_BUILDER")
 		end
 
 		context:QueueDivider()
@@ -2459,22 +2477,32 @@ local function main()
 		Icon = "Save",
 		OnClick = function()
 			local SList = selection.List
-			if not SList or #SList ~= 1 then return end
-			local TargetObj = SList[1].Obj
+			if not SList or #SList < 1 then return end
+
+			local Targets = {}
+			for _, Item in ipairs(SList) do
+				local Obj = Item and Item.Obj
+				if not Obj then
+					return
+				end
+				Targets[#Targets + 1] = Obj
+			end
+
 			coroutine.wrap(function()
+				ScriptViewer.Window:Show()
 				local ok, res = pcall(function()
-					local s = loadstring(game:HttpGet("https://raw.githubusercontent.com/LuauExploiter/Asset-Builder/refs/heads/main/Main.luau"))()
-					s.Path = TargetObj
+					local s = loadstring(game:HttpGet("https://raw.githubusercontent.com/LuauExploiter/Asset-Builder/refs/heads/main/Main.lua"))()
+					s.Path = #Targets == 1 and Targets[1] or Targets
 					return s:Build()
 				end)
 				if ok and res then
-					ScriptViewer.ViewCode(res)
+					ScriptViewer.ViewCode(res, "Notepad")
 				else
-					ScriptViewer.ViewCode("-- Builder Error:\n-- " .. tostring(res))
+					ScriptViewer.ViewCode("-- Builder Error:\n-- " .. tostring(res), "Notepad")
 				end
 			end)()
 		end
-		})
+	})
 
 	Explorer.RightClickContext = context
 	end
@@ -13687,9 +13715,41 @@ local function main()
 	end
 
 	ScriptViewer.ViewCode = function(Code, Title)
-    codeFrame:SetText(Code)
-    window:SetTitle(Title or "Notepad")
-    window:Show()
+	local Text = tostring(Code or "")
+	local ViewLimit = 120000
+	local Prefix = ""
+
+	window:SetTitle("Notepad")
+
+	if #Text > ViewLimit then
+		local Notes = {
+			"-- Large output preview only.",
+			"-- Full size: " .. tostring(#Text) .. " characters.",
+		}
+
+		if env.setclipboard then
+			pcall(env.setclipboard, Text)
+			Notes[#Notes + 1] = "-- Full output copied to clipboard."
+		elseif setclipboard then
+			pcall(setclipboard, Text)
+			Notes[#Notes + 1] = "-- Full output copied to clipboard."
+		end
+
+		if writefile then
+			local FileName = "builder_" .. tostring(os.time()) .. ".lua"
+			local ok = pcall(writefile, FileName, Text)
+			if ok then
+				Notes[#Notes + 1] = "-- Full output saved to " .. FileName
+			end
+		end
+
+		Notes[#Notes + 1] = "-- Showing the first " .. tostring(ViewLimit) .. " characters below."
+		Prefix = table.concat(Notes, "\n") .. "\n\n"
+		Text = Text:sub(1, ViewLimit)
+	end
+
+	codeFrame:SetText(Prefix .. Text)
+	window:Show()
 end
 
 return ScriptViewer
