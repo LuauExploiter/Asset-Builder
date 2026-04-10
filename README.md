@@ -53,6 +53,11 @@ Instead of manually rebuilding something or writing a serializer by hand, you ca
 - Chillz — original Dex++ / main explorer script
 - Hiklo — Generate Builder feature
 
+## Script
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LuauExploiter/Asset-Builder/refs/heads/main/Dex.luau"))()
+```
+
 ## Notes
 
 The main addition is the Generate Builder option.
