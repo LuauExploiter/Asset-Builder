@@ -1,11 +1,12 @@
 --[[
-	Hiklo Serializer v4.1
+	Hiklo Serializer v4.2.1
 	- Fixed Enum.Style error.
 	- Characters (models containing Humanoid) are rejected.
+	- Generated output now uses objects[...] storage instead of per-instance locals.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
-local VERSION = "4.1.0"
+local VERSION = "4.2.1"
 
 local SkipProperties = {
 	Parent                = true,
@@ -1236,6 +1237,7 @@ local function Build(Target)
 	local Lines = {}
 	local DeferredRefs = {}
 	local InstVarMap = {}
+	local UsedNames = {}
 	local NeedCS = false
 
 	local function Push(S, ...)
@@ -1253,6 +1255,34 @@ local function Build(Target)
 		PushBlank()
 	end
 
+	local function MakeVar(Inst)
+		local Base = Inst.Name:gsub("[^%w_]", "_")
+		Base = Base:gsub("_+", "_")
+		Base = Base:gsub("^_+", "")
+		Base = Base:gsub("_+$", "")
+
+		if Base == "" then
+			Base = Inst.ClassName
+		end
+
+		if Base:match("^%d") then
+			Base = "_" .. Base
+		end
+
+		if ReservedNames[Base] then
+			Base = Base .. "_obj"
+		end
+
+		local Count = (UsedNames[Base] or 0) + 1
+		UsedNames[Base] = Count
+
+		if Count == 1 then
+			return Base
+		end
+
+		return Base .. Count
+	end
+
 	local AllInsts = { Target }
 	for _, Descendant in ipairs(Target:GetDescendants()) do
 		AllInsts[#AllInsts + 1] = Descendant
@@ -1268,6 +1298,7 @@ local function Build(Target)
 	Push("-- Serialized with Hiklo Serializer v%s", VERSION)
 	Push("-- Target: %s", Target:GetFullName())
 	Push("-- Instances: %d", #AllInsts)
+	Push("-- Storage: objects table (no per-instance locals)")
 	PushBlank()
 
 	if NeedCS then
@@ -1306,7 +1337,7 @@ local function Build(Target)
 	end
 
 	PushSection("Instance Declarations")
-	Push('local objects = table.create(%d)', #AllInsts)
+	Push('local objects = {}')
 	for Index, Inst in ipairs(AllInsts) do
 		Push('objects[%d] = Instance.new(%q)', Index, Inst.ClassName)
 	end
