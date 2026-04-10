@@ -5,7 +5,7 @@
 	Developed by Chillz
 	
 	Dex++ is a revival of Moon's Dex, made to fulfill Moon's Dex prophecy.
-      Generate Builder option developed by Hiklo, Credits to Chillz for the main dex script.
+    Generate Builder option developed by Hiklo, Credits to Chillz for the main dex script.
 ]]
 
 local selection
