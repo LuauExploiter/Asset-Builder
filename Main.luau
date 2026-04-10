@@ -1,11 +1,11 @@
 --[[
-	Hiklo Serializer v4.1
+	Hiklo Serializer v4.0
 	- Fixed Enum.Style error.
 	- Characters (models containing Humanoid) are rejected.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
-local VERSION = "4.1.0"
+local VERSION = "4.0.0"
 
 local SkipProperties = {
 	Parent                = true,
@@ -44,17 +44,6 @@ local SkipProperties = {
 	IsPlaying             = true,
 	TimeLength            = true,
 	SoundId               = true,
-	HistoryId             = true,
-	UniqueId              = true,
-	Attributes            = true,
-	AttributesReplicate   = true,
-	AttributesSerialize   = true,
-	Tags                  = true,
-	Capabilities          = true,
-	DefinesCapabilities   = true,
-	numExpectedDirectChildren = true,
-	SourceAssetId         = true,
-	SelectionBox          = true,
 }
 
 local ClassSkipProperties = {
@@ -834,18 +823,16 @@ end
 
 local function BuildGamePath(Inst)
 	local Parts = {}
-	local Cur = Inst
-
+	local Cur   = Inst
 	while Cur and Cur ~= game do
-		local Name = Cur.Name
-		if Name:match("^[%a_][%w_]*$") then
-			table.insert(Parts, 1, "." .. Name)
+		local N = Cur.Name
+		if N:match("^[%a_][%w_]*$") then
+			table.insert(Parts, 1, "." .. N)
 		else
-			table.insert(Parts, 1, "[" .. string.format("%q", Name) .. "]")
+			table.insert(Parts, 1, string.format('["%s"]', N:gsub('"', '\\"')))
 		end
 		Cur = Cur.Parent
 	end
-
 	return "game" .. table.concat(Parts)
 end
 
@@ -991,36 +978,6 @@ local function SerializeValue(Val, InstVarMap)
 			.. "\n\t})"
 	end
 
-	if T == "Region3" then
-		local Min = Val.CFrame.Position - (Val.Size / 2)
-		local Max = Val.CFrame.Position + (Val.Size / 2)
-		return string.format("Region3.new(%s, %s)", FmtV3(Min), FmtV3(Max))
-	end
-
-	if T == "Region3int16" then
-		return string.format(
-			"Region3int16.new(Vector3int16.new(%d, %d, %d), Vector3int16.new(%d, %d, %d))",
-			Val.Min.X, Val.Min.Y, Val.Min.Z,
-			Val.Max.X, Val.Max.Y, Val.Max.Z
-		)
-	end
-
-	if T == "ColorSequenceKeypoint" then
-		return string.format("ColorSequenceKeypoint.new(%s, %s)", FmtNum(Val.Time), FmtColor3(Val.Value))
-	end
-
-	if T == "NumberSequenceKeypoint" then
-		if Val.Envelope ~= 0 then
-			return string.format(
-				"NumberSequenceKeypoint.new(%s, %s, %s)",
-				FmtNum(Val.Time),
-				FmtNum(Val.Value),
-				FmtNum(Val.Envelope)
-			)
-		end
-		return string.format("NumberSequenceKeypoint.new(%s, %s)", FmtNum(Val.Time), FmtNum(Val.Value))
-	end
-
 	if T == "EnumItem" then
 		return string.format("Enum.%s.%s", tostring(Val.EnumType), Val.Name)
 	end
@@ -1110,8 +1067,6 @@ end
 
 local WritableProbeCache = {}
 local WritablePropertyCache = {}
-local DefaultPropertyCache = {}
-
 local ReservedNames = {
 	["and"] = true,
 	["break"] = true,
@@ -1151,37 +1106,6 @@ local function GetWritableProbe(ClassName)
 	return nil
 end
 
-local function GetDefaultPropertyValue(Inst, PropName)
-	local ClassName = Inst.ClassName
-	local ClassCache = DefaultPropertyCache[ClassName]
-	if not ClassCache then
-		ClassCache = {}
-		DefaultPropertyCache[ClassName] = ClassCache
-	end
-
-	if ClassCache[PropName] ~= nil then
-		local Entry = ClassCache[PropName]
-		return Entry.Ok and Entry.Value or nil, Entry.Ok
-	end
-
-	local Probe = GetWritableProbe(ClassName)
-	if not Probe then
-		ClassCache[PropName] = { Ok = false }
-		return nil, false
-	end
-
-	local ok, value = pcall(function()
-		return Probe[PropName]
-	end)
-
-	ClassCache[PropName] = {
-		Ok = ok,
-		Value = ok and value or nil,
-	}
-
-	return value, ok
-end
-
 local function CanWriteProperty(Inst, PropName, Value)
 	local ClassName = Inst.ClassName
 	local ClassCache = WritablePropertyCache[ClassName]
@@ -1190,18 +1114,13 @@ local function CanWriteProperty(Inst, PropName, Value)
 		WritablePropertyCache[ClassName] = ClassCache
 	end
 
-	local CacheKey = PropName
-	if typeof(Value) == "Instance" then
-		CacheKey = PropName .. "::Instance"
-	end
-
-	if ClassCache[CacheKey] ~= nil then
-		return ClassCache[CacheKey]
+	if ClassCache[PropName] ~= nil then
+		return ClassCache[PropName]
 	end
 
 	local Probe = GetWritableProbe(ClassName)
 	if not Probe then
-		ClassCache[CacheKey] = false
+		ClassCache[PropName] = false
 		return false
 	end
 
@@ -1209,7 +1128,7 @@ local function CanWriteProperty(Inst, PropName, Value)
 		Probe[PropName] = Value
 	end)
 
-	ClassCache[CacheKey] = ok
+	ClassCache[PropName] = ok
 	return ok
 end
 
@@ -1248,279 +1167,136 @@ local function SerializeParentValue(Parent, InstVarMap)
 	return "nil"
 end
 
-local function IsRuntimeScript(Inst)
-	return Inst:IsA("BaseScript")
-end
-
-local function ShouldDecompileSource(Inst)
-	if Inst:IsA("ModuleScript") or Inst:IsA("LocalScript") then
-		return true
+local function ShouldSkipRedundantProperty(Inst, PropName, PropSet)
+	if PropSet.CFrame then
+		if (Inst:IsA("BasePart") or Inst:IsA("Attachment") or Inst:IsA("Bone")) and (
+			PropName == "Position"
+			or PropName == "Orientation"
+			or PropName == "Rotation"
+		) then
+			return true
+		end
 	end
 
-	if Inst:IsA("Script") then
-		local ok, runContext = pcall(function()
-			return Inst.RunContext
-		end)
-		return ok and runContext == Enum.RunContext.Client
+	if PropSet.WorldCFrame then
+		if (Inst:IsA("Attachment") or Inst:IsA("Bone")) and (
+			PropName == "WorldPosition"
+			or PropName == "WorldOrientation"
+		) then
+			return true
+		end
 	end
 
 	return false
 end
 
-local function ReadSourceValue(Inst)
-	if not ShouldDecompileSource(Inst) then
-		local ok, value = pcall(function()
-			return Inst.Source
-		end)
-		if ok then
-			return value, true
+local function GetPropertyOrderRank(Inst, PropName)
+	if PropName == "Name" then
+		return 0
+	end
+
+	if Inst:IsA("BasePart") then
+		if PropName == "Anchored" then
+			return 1
 		end
-		return nil, false
-	end
-
-	if decompile then
-		local ok, value = pcall(decompile, Inst)
-		if ok and type(value) == "string" then
-			return value, true
+		if PropName == "Size" then
+			return 2
 		end
-	end
-
-	local ok, value = pcall(function()
-		return Inst.Source
-	end)
-	if ok then
-		return value, true
-	end
-
-	return nil, false
-end
-
-local function GetDepth(Inst)
-	local Depth = 0
-	local Current = Inst.Parent
-	while Current do
-		Depth += 1
-		Current = Current.Parent
-	end
-	return Depth
-end
-
-local function ToVarName(Name, Fallback)
-	local Parts = {}
-
-	for Piece in tostring(Name):gmatch("[%a%d_]+") do
-		if Piece ~= "" then
-			Parts[#Parts + 1] = Piece
+		if PropName == "CFrame" then
+			return 3
+		end
+		if PropName == "Position" or PropName == "Orientation" or PropName == "Rotation" then
+			return 4
 		end
 	end
 
-	if #Parts == 0 then
-		Parts[1] = tostring(Fallback or "object")
-	end
-
-	for Index, Piece in ipairs(Parts) do
-		local Lower = Piece:lower()
-		if Index == 1 then
-			Parts[Index] = Lower
-		else
-			Parts[Index] = Lower:sub(1, 1):upper() .. Lower:sub(2)
+	if Inst:IsA("Attachment") or Inst:IsA("Bone") then
+		if PropName == "CFrame" then
+			return 3
+		end
+		if PropName == "Position" or PropName == "Orientation" then
+			return 4
 		end
 	end
 
-	local Result = table.concat(Parts)
-	Result = Result:gsub("^_+", "")
-
-	if Result == "" then
-		Result = tostring(Fallback or "object")
+	if Inst:IsA("Model") and PropName == "WorldPivot" then
+		return 3
 	end
 
-	if Result:match("^%d") then
-		Result = "_" .. Result
-	end
-
-	if ReservedNames[Result] then
-		Result = Result .. "Obj"
-	end
-
-	return Result
-end
-
-local function NormalizeTargets(Target)
-	local Input = {}
-
-	if typeof(Target) == "Instance" then
-		Input[1] = Target
-	elseif type(Target) == "table" then
-		for _, Item in ipairs(Target) do
-			if typeof(Item) == "Instance" then
-				Input[#Input + 1] = Item
-			end
-		end
-	else
-		error("[HikloSerializer] .Path must be a valid Instance or array of Instances")
-	end
-
-	if #Input == 0 then
-		error("[HikloSerializer] no valid instances to build")
-	end
-
-	local Unique = {}
-	local Ordered = {}
-
-	for _, Inst in ipairs(Input) do
-		if not Unique[Inst] then
-			Unique[Inst] = true
-			Ordered[#Ordered + 1] = Inst
-		end
-	end
-
-	local Filtered = {}
-	for _, Inst in ipairs(Ordered) do
-		local Skip = false
-		local Parent = Inst.Parent
-		while Parent do
-			if Unique[Parent] then
-				Skip = true
-				break
-			end
-			Parent = Parent.Parent
-		end
-
-		if not Skip then
-			if Inst:IsA("Model") and Inst:FindFirstChildWhichIsA("Humanoid", true) then
-				error("Characters cannot be built. Remove character models from the selection.")
-			end
-			Filtered[#Filtered + 1] = Inst
-		end
-	end
-
-	if #Filtered == 0 then
-		error("[HikloSerializer] no supported root instances to build")
-	end
-
-	return Filtered
+	return 50
 end
 
 local function Build(Target)
-	local Roots = NormalizeTargets(Target)
+	assert(typeof(Target) == "Instance", "[HikloSerializer] .Path must be a valid Instance")
 
-	local BuildYieldEvery = 100
-	local BuildOps = 0
-
-	local function TickBuild()
-		BuildOps += 1
-		if BuildOps % BuildYieldEvery == 0 and task and task.wait then
-			task.wait()
-		end
+	if Target:IsA("Model") and Target:FindFirstChildWhichIsA("Humanoid", true) then
+		error("Characters cannot be built. Select a part or non-character model.")
 	end
 
 	local Lines = {}
+	local DeferredRefs = {}
 	local InstVarMap = {}
+	local UsedNames = {}
 	local NeedCS = false
-	local TotalProperties = 0
-	local TotalDeferredProperties = 0
-	local TotalAttributes = 0
-	local TotalTags = 0
-	local AllInsts = {}
-	local SeenInsts = {}
-	local DeferredPropertyBlocks = {}
-	local ScriptStateBlocks = {}
-	local RootIndexMap = {}
-	local RootLookup = {}
-	local RootCount = #Roots
 
-	local function Push(Line, ...)
-		Lines[#Lines + 1] = select("#", ...) > 0 and string.format(Line, ...) or Line
+	local function Push(S, ...)
+		Lines[#Lines + 1] = select("#", ...) > 0 and string.format(S, ...) or S
 	end
 
 	local function PushBlank()
 		Lines[#Lines + 1] = ""
 	end
 
-	local function PushComment(Text)
-		Push("-- " .. Text)
+	local function PushSection(Title)
+		Push(string.rep("-", 64))
+		Push("-- " .. Title)
+		Push(string.rep("-", 64))
+		PushBlank()
 	end
 
-	local function PushArrayCall(FuncName, VarName, Values)
-		if #Values == 0 then
-			return
+	local function MakeVar(Inst)
+		local Base = Inst.Name:gsub("[^%w_]", "_")
+		Base = Base:gsub("_+", "_")
+		Base = Base:gsub("^_+", "")
+		Base = Base:gsub("_+$", "")
+
+		if Base == "" then
+			Base = Inst.ClassName
 		end
 
-		Push("%s(%s, {", FuncName, VarName)
-		for _, Value in ipairs(Values) do
-			Push("	%s,", Value)
+		if Base:match("^%d") then
+			Base = "_" .. Base
 		end
-		Push("})")
+
+		if ReservedNames[Base] then
+			Base = Base .. "_obj"
+		end
+
+		local Count = (UsedNames[Base] or 0) + 1
+		UsedNames[Base] = Count
+
+		if Count == 1 then
+			return Base
+		end
+
+		return Base .. Count
 	end
 
-	local function PushMapCall(FuncName, VarName, Entries)
-		if #Entries == 0 then
-			return
-		end
-
-		Push("%s(%s, {", FuncName, VarName)
-		for _, Entry in ipairs(Entries) do
-			Push("	{ %q, %s },", Entry.Name, Entry.Value)
-		end
-		Push("})")
+	local AllInsts = { Target }
+	for _, Descendant in ipairs(Target:GetDescendants()) do
+		AllInsts[#AllInsts + 1] = Descendant
 	end
 
-	local function CollectTree(Inst)
-		if SeenInsts[Inst] then
-			return
-		end
-
-		SeenInsts[Inst] = true
-		AllInsts[#AllInsts + 1] = Inst
-
-		local ok, Tags = pcall(CollectionService.GetTags, CollectionService, Inst)
-		if ok and #Tags > 0 then
+	for _, Inst in ipairs(AllInsts) do
+		InstVarMap[Inst] = MakeVar(Inst)
+		if #CollectionService:GetTags(Inst) > 0 then
 			NeedCS = true
 		end
-
-		TickBuild()
-
-		for _, Descendant in ipairs(Inst:GetDescendants()) do
-			if not SeenInsts[Descendant] then
-				SeenInsts[Descendant] = true
-				AllInsts[#AllInsts + 1] = Descendant
-
-				local TagsOk, DescTags = pcall(CollectionService.GetTags, CollectionService, Descendant)
-				if TagsOk and #DescTags > 0 then
-					NeedCS = true
-				end
-
-				TickBuild()
-			end
-		end
 	end
 
-	for RootPosition, Root in ipairs(Roots) do
-		RootLookup[Root] = true
-		CollectTree(Root)
-		RootIndexMap[Root] = RootPosition
-	end
-
-	table.sort(AllInsts, function(A, B)
-		local AD = GetDepth(A)
-		local BD = GetDepth(B)
-		if AD ~= BD then
-			return AD < BD
-		end
-		return A:GetFullName() < B:GetFullName()
-	end)
-
-	for Index, Inst in ipairs(AllInsts) do
-		InstVarMap[Inst] = string.format("objects[%d]", Index)
-		TickBuild()
-	end
-
-	PushComment(("Serialized with Hiklo Serializer v%s"):format(VERSION))
-	PushComment(("Roots: %d"):format(RootCount))
-	for RootPosition, Root in ipairs(Roots) do
-		PushComment(("[%d] %s"):format(RootPosition, Root:GetFullName()))
-	end
-	PushComment(("Instances: %d"):format(#AllInsts))
+	Push("-- Serialized with Hiklo Serializer v%s", VERSION)
+	Push("-- Target: %s", Target:GetFullName())
+	Push("-- Instances: %d", #AllInsts)
 	PushBlank()
 
 	if NeedCS then
@@ -1528,290 +1304,148 @@ local function Build(Target)
 		PushBlank()
 	end
 
-	Push("local YIELD_EVERY = 100")
-	Push("local _yieldCounter = 0")
-	Push("local _writeErrors = 0")
+	Push('local function set(inst, prop, value)')
+	Push('	pcall(function()')
+	Push('		inst[prop] = value')
+	Push('	end)')
+	Push('end')
 	PushBlank()
 
-	Push("local function step()")
-	Push("	_yieldCounter = _yieldCounter + 1")
-	Push("	if task and task.wait and _yieldCounter >= YIELD_EVERY then")
-	Push("		_yieldCounter = 0")
-	Push("		task.wait()")
-	Push("	end")
-	Push("end")
+	Push('local function setParent(inst, parent)')
+	Push('	pcall(function()')
+	Push('		inst.Parent = parent')
+	Push('	end)')
+	Push('end')
 	PushBlank()
 
-	Push("local function safeCall(fn)")
-	Push("	local ok = pcall(fn)")
-	Push("	if not ok then")
-	Push("		_writeErrors = _writeErrors + 1")
-	Push("	end")
-	Push("	step()")
-	Push("end")
-	PushBlank()
-
-	Push("local function applyProperties(inst, props)")
-	Push("	for _, entry in ipairs(props) do")
-	Push("		local prop = entry[1]")
-	Push("		local value = entry[2]")
-	Push("		safeCall(function()")
-	Push("			inst[prop] = value")
-	Push("		end)")
-	Push("	end")
-	Push("end")
-	PushBlank()
-
-	Push("local function applyAttributes(inst, attrs)")
-	Push("	for _, entry in ipairs(attrs) do")
-	Push("		local name = entry[1]")
-	Push("		local value = entry[2]")
-	Push("		safeCall(function()")
-	Push("			inst:SetAttribute(name, value)")
-	Push("		end)")
-	Push("	end")
-	Push("end")
+	Push('local function setAttr(inst, name, value)')
+	Push('	pcall(function()')
+	Push('		inst:SetAttribute(name, value)')
+	Push('	end)')
+	Push('end')
 	PushBlank()
 
 	if NeedCS then
-		Push("local function applyTags(inst, tags)")
-		Push("	for _, tag in ipairs(tags) do")
-		Push("		safeCall(function()")
-		Push("			CollectionService:AddTag(inst, tag)")
-		Push("		end)")
-		Push("	end")
-		Push("end")
+		Push('local function addTag(inst, tag)')
+		Push('	pcall(function()')
+		Push('		CollectionService:AddTag(inst, tag)')
+		Push('	end)')
+		Push('end')
 		PushBlank()
 	end
 
-	Push("local function attach(inst, parent)")
-	Push("	safeCall(function()")
-	Push("		inst.Parent = parent")
-	Push("	end)")
-	Push("end")
-	PushBlank()
-
-	Push("local function new(className)")
-	Push("	return Instance.new(className)")
-	Push("end")
-	PushBlank()
-
-	PushComment("instance declarations")
-	Push("local objects = table.create(%d)", #AllInsts)
-	for Index, Inst in ipairs(AllInsts) do
-		Push('objects[%d] = new(%q)', Index, Inst.ClassName)
-	end
-	PushBlank()
-
-	PushComment("hold runtime scripts")
+	PushSection("Instance Declarations")
 	for _, Inst in ipairs(AllInsts) do
-		if IsRuntimeScript(Inst) then
-			Push("safeCall(function()")
-			Push("	%s.Disabled = true", InstVarMap[Inst])
-			Push("end)")
-		end
+		Push('local %s = Instance.new(%q)', InstVarMap[Inst], Inst.ClassName)
 	end
 	PushBlank()
 
-	PushComment("names")
-	for Index, Inst in ipairs(AllInsts) do
-		Push("safeCall(function()")
-		Push("	objects[%d].Name = %q", Index, Inst.Name)
-		Push("end)")
-	end
-	PushBlank()
-
-	PushComment("properties, attributes, and tags")
+	PushSection("Properties, Attributes, and Tags")
 	for _, Inst in ipairs(AllInsts) do
-		local VarName = InstVarMap[Inst]
+		local Var = InstVarMap[Inst]
 		local PropSet = ResolveProps(Inst)
-		local FallbackDefaults = ResolveFallbackProps(Inst)
 		local PropNames = {}
 
 		for PropName in pairs(PropSet) do
 			PropNames[#PropNames + 1] = PropName
 		end
-		table.sort(PropNames)
-
-		local PropertyEntries = {}
-		local DeferredEntries = {}
-		for _, PropName in ipairs(PropNames) do
-			if PropName ~= "Name" then
-				local ok, Value
-				if PropName == "Source" then
-					Value, ok = ReadSourceValue(Inst)
-				else
-					ok, Value = pcall(function()
-						return Inst[PropName]
-					end)
-				end
-
-				if ok and CanWriteProperty(Inst, PropName, Value) then
-					local Serialized = SerializeValue(Value, InstVarMap)
-					if Serialized then
-						if PropName == "Disabled" and IsRuntimeScript(Inst) then
-							ScriptStateBlocks[#ScriptStateBlocks + 1] = {
-								VarName = VarName,
-								Value = Serialized,
-								ClassName = Inst.ClassName,
-								Name = Inst.Name,
-							}
-							TotalProperties += 1
-						else
-							local DefaultValue, HasDefault = GetDefaultPropertyValue(Inst, PropName)
-							if not HasDefault then
-								DefaultValue = FallbackDefaults[PropName]
-								HasDefault = DefaultValue ~= nil
-							end
-
-							if not HasDefault or not ValuesEqual(Value, DefaultValue, InstVarMap) then
-								local Entry = {
-									Name = PropName,
-									Value = Serialized,
-								}
-
-								if typeof(Value) == "Instance" then
-									DeferredEntries[#DeferredEntries + 1] = Entry
-									TotalDeferredProperties += 1
-								else
-									PropertyEntries[#PropertyEntries + 1] = Entry
-									TotalProperties += 1
-								end
-							end
-						end
-					end
-				end
+		table.sort(PropNames, function(A, B)
+			local ARank = GetPropertyOrderRank(Inst, A)
+			local BRank = GetPropertyOrderRank(Inst, B)
+			if ARank ~= BRank then
+				return ARank < BRank
 			end
-			TickBuild()
-		end
-
-		local AttributeEntries = {}
-		local ok, Attributes = pcall(function()
-			return Inst:GetAttributes()
+			return A < B
 		end)
-		if ok then
-			local Names = {}
-			for AttributeName in pairs(Attributes) do
-				Names[#Names + 1] = AttributeName
+
+		local HasLines = false
+		local function EnsureHeader()
+			if HasLines then
+				return
 			end
-			table.sort(Names)
-			for _, AttributeName in ipairs(Names) do
-				local Serialized = SerializeValue(Attributes[AttributeName], InstVarMap)
-				if Serialized then
-					AttributeEntries[#AttributeEntries + 1] = {
-						Name = AttributeName,
-						Value = Serialized,
-					}
-					TotalAttributes += 1
-				end
-				TickBuild()
+			Push('-- [%s] %s', Inst.ClassName, Inst.Name)
+			HasLines = true
+		end
+
+		for _, PropName in ipairs(PropNames) do
+			local ok, Value = pcall(function()
+				return Inst[PropName]
+			end)
+			if not ok then
+				continue
+			end
+
+			local Serialized = SerializeValue(Value, InstVarMap)
+			if not Serialized then
+				continue
+			end
+
+			if ShouldSkipRedundantProperty(Inst, PropName, PropSet) then
+				continue
+			end
+
+			if not CanWriteProperty(Inst, PropName, Value) then
+				continue
+			end
+
+			if typeof(Value) == "Instance" then
+				DeferredRefs[#DeferredRefs + 1] = string.format('set(%s, %q, %s)', Var, PropName, Serialized)
+			else
+				EnsureHeader()
+				Push('set(%s, %q, %s)', Var, PropName, Serialized)
 			end
 		end
 
-		local Tags = {}
-		local TagsOk, ReadTags = pcall(CollectionService.GetTags, CollectionService, Inst)
-		if TagsOk and #ReadTags > 0 then
-			table.sort(ReadTags)
-			for _, Tag in ipairs(ReadTags) do
-				Tags[#Tags + 1] = string.format("%q", Tag)
-				TotalTags += 1
-				TickBuild()
+		local AttrMap = Inst:GetAttributes()
+		local AttrNames = {}
+		for AttrName in pairs(AttrMap) do
+			AttrNames[#AttrNames + 1] = AttrName
+		end
+		table.sort(AttrNames)
+
+		for _, AttrName in ipairs(AttrNames) do
+			local Serialized = SerializeValue(AttrMap[AttrName], InstVarMap)
+			if Serialized then
+				EnsureHeader()
+				Push('setAttr(%s, %q, %s)', Var, AttrName, Serialized)
 			end
 		end
 
-		if #DeferredEntries > 0 then
-			DeferredPropertyBlocks[#DeferredPropertyBlocks + 1] = {
-				VarName = VarName,
-				Entries = DeferredEntries,
-				ClassName = Inst.ClassName,
-				Name = Inst.Name,
-			}
+		local Tags = CollectionService:GetTags(Inst)
+		if #Tags > 0 then
+			table.sort(Tags)
+			for _, Tag in ipairs(Tags) do
+				EnsureHeader()
+				Push('addTag(%s, %q)', Var, Tag)
+			end
 		end
 
-		if #PropertyEntries > 0 or #AttributeEntries > 0 or #Tags > 0 then
-			PushComment(("[%s] %s"):format(Inst.ClassName, Inst.Name))
-			if #PropertyEntries > 0 then
-				PushMapCall("applyProperties", VarName, PropertyEntries)
-			end
-			if #AttributeEntries > 0 then
-				PushMapCall("applyAttributes", VarName, AttributeEntries)
-			end
-			if #Tags > 0 and NeedCS then
-				PushArrayCall("applyTags", VarName, Tags)
-			end
+		if HasLines then
 			PushBlank()
 		end
 	end
 
-	if #DeferredPropertyBlocks > 0 then
-		PushComment("instance reference properties")
-		for _, Block in ipairs(DeferredPropertyBlocks) do
-			PushComment(("[%s] %s"):format(Block.ClassName, Block.Name))
-			PushMapCall("applyProperties", Block.VarName, Block.Entries)
-			PushBlank()
-		end
-	end
-
-	PushComment("parent assignments")
-	PushComment("build descendants first so roots enter the game fully assembled")
+	PushSection("Parent Assignments")
 	for _, Inst in ipairs(AllInsts) do
-		if not RootLookup[Inst] and not IsRuntimeScript(Inst) then
-			Push("attach(%s, %s)", InstVarMap[Inst], SerializeParentValue(Inst.Parent, InstVarMap))
-		end
-		TickBuild()
-	end
-	for _, Inst in ipairs(AllInsts) do
-		if not RootLookup[Inst] and IsRuntimeScript(Inst) then
-			Push("attach(%s, %s)", InstVarMap[Inst], SerializeParentValue(Inst.Parent, InstVarMap))
-		end
-		TickBuild()
-	end
-	for _, Root in ipairs(Roots) do
-		Push("attach(%s, %s)", InstVarMap[Root], SerializeParentValue(Root.Parent, InstVarMap))
-		TickBuild()
+		Push('setParent(%s, %s)', InstVarMap[Inst], SerializeParentValue(Inst.Parent, InstVarMap))
 	end
 	PushBlank()
 
-	if #ScriptStateBlocks > 0 then
-		PushComment("restore runtime scripts")
-		for _, Block in ipairs(ScriptStateBlocks) do
-			PushComment(("[%s] %s"):format(Block.ClassName, Block.Name))
-			Push("safeCall(function()")
-			Push("	%s.Disabled = %s", Block.VarName, Block.Value)
-			Push("end)")
-			PushBlank()
+	if #DeferredRefs > 0 then
+		PushSection("Instance Reference Properties")
+		for _, Line in ipairs(DeferredRefs) do
+			Push(Line)
 		end
-	end
-
-	PushComment(("property writes: %d"):format(TotalProperties + TotalDeferredProperties))
-	PushComment(("attribute writes: %d"):format(TotalAttributes))
-	if NeedCS then
-		PushComment(("tag writes: %d"):format(TotalTags))
-	end
-	PushBlank()
-
-	Push("if _writeErrors > 0 then")
-	Push('\twarn(("[Builder] skipped %d write%s"):format(_writeErrors, _writeErrors == 1 and "" or "s"))')
-	Push("end")
-	PushBlank()
-
-	if RootCount == 1 then
-		Push("return %s", InstVarMap[Roots[1]])
-	else
-		Push("return {")
-		for _, Root in ipairs(Roots) do
-			Push("	%s,", InstVarMap[Root])
-		end
-		Push("}")
+		PushBlank()
 	end
 
 	return table.concat(Lines, "\n")
 end
 
-local HikloSerializer = {}
-HikloSerializer.__index = HikloSerializer
-HikloSerializer.Path = nil
-HikloSerializer.Version = VERSION
+local HikloSerializer    = {}
+HikloSerializer.__index  = HikloSerializer
+HikloSerializer.Path     = nil
+HikloSerializer.Version  = VERSION
 
 function HikloSerializer:Build()
 	assert(self.Path ~= nil, "[HikloSerializer] .Path is not set")
@@ -1820,29 +1454,19 @@ end
 
 function HikloSerializer:Save(FileName)
 	local Output = self:Build()
-	local Targets = NormalizeTargets(self.Path)
-	local BaseName
-	if #Targets == 1 then
-		BaseName = tostring(Targets[1].Name):gsub("[^%w]", "_")
-	else
-		BaseName = string.format("multi_%d_items", #Targets)
-	end
-	local Name = FileName or ("hiklo_" .. BaseName .. "_" .. os.time() .. ".lua")
-
+	local Name   = FileName
+		or ("hiklo_" .. tostring(self.Path.Name):gsub("[^%w]", "_") .. "_" .. os.time() .. ".lua")
 	if writefile then
 		writefile(Name, Output)
 		warn("[HikloSerializer] Saved -> " .. Name)
 	end
-
 	if setclipboard then
 		setclipboard(Output)
 		warn("[HikloSerializer] Copied to clipboard")
 	end
-
 	if not writefile and not setclipboard then
 		print(Output)
 	end
-
 	return Output
 end
 
