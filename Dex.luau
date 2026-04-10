@@ -2491,7 +2491,7 @@ local function main()
 			coroutine.wrap(function()
 				ScriptViewer.Window:Show()
 				local ok, res = pcall(function()
-					local s = loadstring(game:HttpGet("https://raw.githubusercontent.com/LuauExploiter/Asset-Builder/refs/heads/main/Main.lua"))()
+					local s = loadstring(game:HttpGet("https://raw.githubusercontent.com/LuauExploiter/Asset-Builder/refs/heads/main/Main.luau"))()
 					s.Path = #Targets == 1 and Targets[1] or Targets
 					return s:Build()
 				end)
