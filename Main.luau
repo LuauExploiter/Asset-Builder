@@ -1,5 +1,5 @@
 --[[
-	Hiklo Serializer v4.0
+	Hiklo Serializer v3.1
 	- Fixed Enum.Style error.
 	- Characters (models containing Humanoid) are rejected.
 ]]
@@ -1462,6 +1462,14 @@ local function Build(Target)
 	end
 	PushBlank()
 
+	PushComment("names")
+	for Index, Inst in ipairs(AllInsts) do
+		Push("safeCall(function()")
+		Push("\tobjects[%d].Name = %q", Index, Inst.Name)
+		Push("end)")
+	end
+	PushBlank()
+
 	PushComment("properties, attributes, and tags")
 	for _, Inst in ipairs(AllInsts) do
 		local VarName = InstVarMap[Inst]
@@ -1477,11 +1485,12 @@ local function Build(Target)
 		local PropertyEntries = {}
 		local DeferredEntries = {}
 		for _, PropName in ipairs(PropNames) do
-			local ok, Value = pcall(function()
-				return Inst[PropName]
-			end)
+			if PropName ~= "Name" then
+				local ok, Value = pcall(function()
+					return Inst[PropName]
+				end)
 
-			if ok and CanWriteProperty(Inst, PropName, Value) then
+				if ok and CanWriteProperty(Inst, PropName, Value) then
 				local Serialized = SerializeValue(Value, InstVarMap)
 				if Serialized then
 					local DefaultValue, HasDefault = GetDefaultPropertyValue(Inst, PropName)
@@ -1504,6 +1513,7 @@ local function Build(Target)
 							TotalProperties += 1
 						end
 					end
+				end
 				end
 			end
 
