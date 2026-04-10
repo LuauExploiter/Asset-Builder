@@ -1056,16 +1056,10 @@ local function Build(Target)
 	assert(typeof(Target) == "Instance", "[HikloSerializer] .Path must be a valid Instance")
 
 	-- 🚫 CHARACTER FILTER
-	if Target:IsA("Model") then
-		if Target:FindFirstChildOfClass("Humanoid") then
-			error("Characters (models with Humanoid) cannot be built.")
-		end
-		for _, child in ipairs(Target:GetDescendants()) do
-			if child:IsA("Humanoid") then
-				error("Characters (models with Humanoid) cannot be built.")
-			end
-		end
-	end
+	-- Only reject if the target itself is a Model that contains a Humanoid
+if Target:IsA("Model") and Target:FindFirstChildWhichIsA("Humanoid", true) then
+    error("Characters cannot be built. Select a part or non-character model.")
+end
 
 	local Lines        = {}
 	local DeferredRefs = {}
