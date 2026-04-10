@@ -95,7 +95,6 @@ FallbackProperties["Part"] = {
 
 FallbackProperties["WedgePart"]         = {}
 FallbackProperties["CornerWedgePart"]   = {}
--- FIXED: Removed invalid Enum.Style reference
 FallbackProperties["TrussPart"]         = {}
 FallbackProperties["SpawnLocation"]     = { AllowTeamChangeOnTouch = false, Duration = 10, Enabled = true, Neutral = true, TeamColor = BrickColor.new("White") }
 FallbackProperties["Platform"]          = {}
@@ -1540,9 +1539,6 @@ end
 local function Build(Target)
 	assert(typeof(Target) == "Instance", "[HikloSerializer] .Path must be a valid Instance")
 
-	if Target:IsA("Model") and Target:FindFirstChildWhichIsA("Humanoid", true) then
-		error("Characters cannot be built. Select a part or non-character model.")
-	end
 
 	local Lines = {}
 	local DeferredRefs = {}
@@ -1561,9 +1557,6 @@ local function Build(Target)
 	end
 
 	local function PushSection(Title)
-		Push(string.rep("-", 64))
-		Push("-- " .. Title)
-		Push(string.rep("-", 64))
 		PushBlank()
 	end
 
@@ -1607,10 +1600,6 @@ local function Build(Target)
 		end
 	end
 
-	Push("-- Serialized with Hiklo Serializer v%s", VERSION)
-	Push("-- Target: %s", Target:GetFullName())
-	Push("-- Instances: %d", #AllInsts)
-	PushBlank()
 
 	if NeedCS then
 		Push('local CollectionService = game:GetService("CollectionService")')
@@ -1680,7 +1669,6 @@ local function Build(Target)
 			if HasLines then
 				return
 			end
-			Push('-- [%s] %s', Inst.ClassName, Inst.Name)
 			HasLines = true
 		end
 
