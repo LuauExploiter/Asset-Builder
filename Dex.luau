@@ -13619,7 +13619,10 @@ local function main()
 		execute.Text = "Execute"
 		execute.TextColor3 = Color3.new(1,1,1)
 		
-		if env.loadstring then
+		local executeLoader = (env and type(env.loadstring) == "function" and env.loadstring)
+			or (type(loadstring) == "function" and loadstring)
+
+		if executeLoader then
 			execute.TextColor3 = Color3.new(1,1,1)
 			execute.Interactable = true
 		else
@@ -13628,22 +13631,35 @@ local function main()
 		end
 
 		execute.MouseButton1Click:Connect(function()
-			local source = codeFrame:GetText()
-			local loader = env.loadstring
-			if type(loader) ~= "function" then return end
-
-			local ok, compiled, compileErr = pcall(loader, source)
-			if not ok then
-				ScriptViewer.ViewCode("-- Execute Error:\n-- " .. tostring(compiled), "Notepad")
+			local okSource, source = pcall(function()
+				return codeFrame:GetText()
+			end)
+			if not okSource then
+				ScriptViewer.ViewCode("-- Execute Error:\n-- " .. tostring(source), "Notepad")
 				return
 			end
 
-			if type(compiled) ~= "function" then
-				ScriptViewer.ViewCode("-- Execute Error:\n-- " .. tostring(compileErr or compiled), "Notepad")
+			local loader = (env and type(env.loadstring) == "function" and env.loadstring)
+				or (type(loadstring) == "function" and loadstring)
+			if not loader then
+				ScriptViewer.ViewCode("-- Execute Error:\n-- loadstring is not available in this executor.", "Notepad")
 				return
 			end
 
-			local ran, runtimeErr = pcall(compiled)
+			local okCompile, compiledOrErr = pcall(function()
+				return loader(source)
+			end)
+			if not okCompile then
+				ScriptViewer.ViewCode("-- Execute Error:\n-- " .. tostring(compiledOrErr), "Notepad")
+				return
+			end
+
+			if type(compiledOrErr) ~= "function" then
+				ScriptViewer.ViewCode("-- Execute Error:\n-- " .. tostring(compiledOrErr), "Notepad")
+				return
+			end
+
+			local ran, runtimeErr = pcall(compiledOrErr)
 			if not ran then
 				ScriptViewer.ViewCode("-- Runtime Error:\n-- " .. tostring(runtimeErr), "Notepad")
 			end
