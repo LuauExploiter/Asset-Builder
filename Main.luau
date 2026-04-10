@@ -1,16 +1,5 @@
---[[
-	Hiklo Serializer v4.5.0
-	- Fixed Enum.Style error.
-	- Characters (models containing Humanoid) are rejected.
-	- Generated output now uses objects[...] storage instead of per-instance locals.
-	- Property discovery now merges getproperties/listproperties/hints more aggressively.
-	- Hidden properties are read when possible and writes fall back to sethiddenproperty.
-	- Script source capture prefers decompile() when available.
-	- Better GUI/Billboard/Text property coverage for gradients, strokes, fonts, and visual styling.
-]]
-
 local CollectionService = game:GetService("CollectionService")
-local VERSION = "4.5.0"
+local VERSION = "4.6.0"
 
 local SkipProperties = {
 	Parent                = true,
@@ -796,36 +785,21 @@ local ExactPropertyHints = {
 	LayerCollector = {
 		"Enabled", "ResetOnSpawn", "ZIndexBehavior",
 	},
-	ScreenGui = {
-		"ClipToDeviceSafeArea", "DisplayOrder", "Enabled", "IgnoreGuiInset", "OnTopOfCoreBlur",
-		"ResetOnSpawn", "ScreenInsets", "SafeAreaCompatibility", "ZIndexBehavior",
-	},
-	BillboardGui = {
-		"Active", "Adornee", "AlwaysOnTop", "Brightness", "ClipsDescendants", "Enabled",
-		"ExtentsOffset", "ExtentsOffsetWorldSpace", "LightInfluence", "MaxDistance",
-		"PlayerToHideFrom", "Size", "SizeOffset", "StudsOffset", "StudsOffsetWorldSpace",
-		"DistanceStep", "ZIndexBehavior",
-	},
-	SurfaceGui = {
-		"Active", "Adornee", "AlwaysOnTop", "Brightness", "CanvasSize", "ClipsDescendants",
-		"Enabled", "Face", "LightInfluence", "MaxDistance", "PixelsPerStud",
-		"SizingMode", "ToolPunchThroughDistance", "ZIndexBehavior",
-	},
 	TextLabel = {
-		"Text", "Font", "FontFace", "OpenTypeFeatures", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
-		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextDirection", "TextTruncate",
-		"TextXAlignment", "TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
+		"Text", "FontFace", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
+		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextXAlignment",
+		"TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
 	},
 	TextButton = {
-		"Text", "Font", "FontFace", "OpenTypeFeatures", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
-		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextDirection", "TextTruncate",
-		"TextXAlignment", "TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
+		"Text", "FontFace", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
+		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextXAlignment",
+		"TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
 		"AutoButtonColor", "Modal", "Selected", "Style",
 	},
 	TextBox = {
-		"Text", "Font", "FontFace", "OpenTypeFeatures", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
-		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextDirection", "TextTruncate",
-		"TextXAlignment", "TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
+		"Text", "FontFace", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
+		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextXAlignment",
+		"TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
 		"ClearTextOnFocus", "MultiLine", "PlaceholderColor3", "PlaceholderText", "ShowNativeInput", "TextEditable",
 	},
 	ImageLabel = {
@@ -1221,7 +1195,7 @@ local function SerializeValue(Val, InstVarMap)
 
 	if T == "Font" then
 		return string.format(
-			'Font.new(%q, Enum.FontWeight.%s, Enum.FontStyle.%s)',
+			'Font.new("%s", Enum.FontWeight.%s, Enum.FontStyle.%s)',
 			Val.Family, Val.Weight.Name, Val.Style.Name
 		)
 	end
@@ -1312,6 +1286,53 @@ local function GetScriptSource(Inst)
 	end
 
 	return nil
+end
+
+local function ShouldUseFinalVisualProperty(Inst, PropName)
+	if Inst:IsA("TextLabel") or Inst:IsA("TextButton") or Inst:IsA("TextBox") then
+		if PropName == "TextColor3"
+			or PropName == "TextTransparency"
+			or PropName == "TextStrokeColor3"
+			or PropName == "TextStrokeTransparency"
+			or PropName == "Font"
+			or PropName == "FontFace"
+			or PropName == "OpenTypeFeatures"
+			or PropName == "LineHeight"
+			or PropName == "RichText"
+			or PropName == "TextScaled"
+			or PropName == "TextWrapped"
+			or PropName == "TextDirection"
+			or PropName == "TextTruncate"
+			or PropName == "MaxVisibleGraphemes"
+		then
+			return true
+		end
+	end
+
+	if Inst:IsA("UIGradient") then
+		if PropName == "Color"
+			or PropName == "Transparency"
+			or PropName == "Offset"
+			or PropName == "Rotation"
+			or PropName == "Enabled"
+		then
+			return true
+		end
+	end
+
+	if Inst:IsA("UIStroke") then
+		if PropName == "Color"
+			or PropName == "Transparency"
+			or PropName == "Thickness"
+			or PropName == "Enabled"
+			or PropName == "ApplyStrokeMode"
+			or PropName == "LineJoinMode"
+		then
+			return true
+		end
+	end
+
+	return false
 end
 
 local function ShouldUseLateProperty(Inst, PropName, Value)
@@ -1513,60 +1534,6 @@ local function GetPropertyOrderRank(Inst, PropName)
 		end
 	end
 
-	if Inst:IsA("BillboardGui") or Inst:IsA("SurfaceGui") or Inst:IsA("ScreenGui") then
-		if PropName == "Adornee" then
-			return 80
-		end
-	end
-
-	if Inst:IsA("TextLabel") or Inst:IsA("TextButton") or Inst:IsA("TextBox") then
-		if PropName == "Font" then
-			return 1
-		end
-		if PropName == "FontFace" then
-			return 2
-		end
-		if PropName == "OpenTypeFeatures" then
-			return 3
-		end
-		if PropName == "TextSize" then
-			return 4
-		end
-		if PropName == "TextScaled" then
-			return 5
-		end
-		if PropName == "TextWrapped" then
-			return 6
-		end
-		if PropName == "RichText" then
-			return 7
-		end
-		if PropName == "TextDirection" or PropName == "TextTruncate" then
-			return 8
-		end
-		if PropName == "TextColor3" then
-			return 9
-		end
-		if PropName == "TextTransparency" then
-			return 10
-		end
-		if PropName == "TextStrokeColor3" then
-			return 11
-		end
-		if PropName == "TextStrokeTransparency" then
-			return 12
-		end
-		if PropName == "TextXAlignment" or PropName == "TextYAlignment" then
-			return 13
-		end
-		if PropName == "LineHeight" or PropName == "MaxVisibleGraphemes" then
-			return 14
-		end
-		if PropName == "Text" then
-			return 15
-		end
-	end
-
 	return 50
 end
 
@@ -1580,6 +1547,7 @@ local function Build(Target)
 	local Lines = {}
 	local DeferredRefs = {}
 	local DeferredLateProps = {}
+	local DeferredVisualProps = {}
 	local InstVarMap = {}
 	local UsedNames = {}
 	local NeedCS = false
@@ -1642,7 +1610,6 @@ local function Build(Target)
 	Push("-- Serialized with Hiklo Serializer v%s", VERSION)
 	Push("-- Target: %s", Target:GetFullName())
 	Push("-- Instances: %d", #AllInsts)
-	Push("-- Storage: objects table (no per-instance locals)")
 	PushBlank()
 
 	if NeedCS then
@@ -1741,6 +1708,8 @@ local function Build(Target)
 
 			if typeof(Value) == "Instance" then
 				DeferredRefs[#DeferredRefs + 1] = string.format('set(%s, %q, %s)', Var, PropName, Serialized)
+			elseif ShouldUseFinalVisualProperty(Inst, PropName) then
+				DeferredVisualProps[#DeferredVisualProps + 1] = string.format('set(%s, %q, %s)', Var, PropName, Serialized)
 			elseif ShouldUseLateProperty(Inst, PropName, Value) then
 				DeferredLateProps[#DeferredLateProps + 1] = string.format('set(%s, %q, %s)', Var, PropName, Serialized)
 			else
@@ -1795,6 +1764,14 @@ local function Build(Target)
 	if #DeferredLateProps > 0 then
 		PushSection("Late Properties")
 		for _, Line in ipairs(DeferredLateProps) do
+			Push(Line)
+		end
+		PushBlank()
+	end
+
+	if #DeferredVisualProps > 0 then
+		PushSection("Final Visual Properties")
+		for _, Line in ipairs(DeferredVisualProps) do
 			Push(Line)
 		end
 		PushBlank()
