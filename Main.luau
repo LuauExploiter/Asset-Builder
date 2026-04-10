@@ -1,12 +1,13 @@
 --[[
-	Hiklo Serializer v4.2.1
+	Hiklo Serializer v4.3.0
 	- Fixed Enum.Style error.
 	- Characters (models containing Humanoid) are rejected.
 	- Generated output now uses objects[...] storage instead of per-instance locals.
+	- getproperties is merged with fallback and exact-hint props for better 1:1 output.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
-local VERSION = "4.2.1"
+local VERSION = "4.3.0"
 
 local SkipProperties = {
 	Parent                = true,
@@ -723,6 +724,160 @@ for _, Class in ipairs(TextClasses) do
 	for K, V in pairs(TextBase) do if T[K] == nil then T[K] = V end end
 end
 
+
+local ExactPropertyHints = {
+	Instance = {
+		"Name",
+	},
+	BasePart = {
+		"Anchored", "Size", "CFrame", "PivotOffset", "Position", "Orientation", "Rotation",
+		"BrickColor", "Color", "Material", "MaterialVariant", "Transparency", "Reflectance",
+		"CanCollide", "CanTouch", "CanQuery", "CastShadow", "Locked", "Massless",
+		"CustomPhysicalProperties", "TopSurface", "BottomSurface", "LeftSurface", "RightSurface",
+		"FrontSurface", "BackSurface", "TopParamA", "TopParamB", "BottomParamA", "BottomParamB",
+		"LeftParamA", "LeftParamB", "RightParamA", "RightParamB", "FrontParamA", "FrontParamB",
+		"BackParamA", "BackParamB", "CollisionGroup", "RootPriority",
+	},
+	Part = {
+		"Shape",
+	},
+	MeshPart = {
+		"MeshId", "MeshSize", "TextureID", "RenderFidelity", "DoubleSided",
+	},
+	SpecialMesh = {
+		"MeshType", "MeshId", "TextureId", "Scale", "Offset", "VertexColor", "RotationOffset",
+	},
+	Decal = {
+		"Texture", "Transparency", "Face", "Color3", "Shiny", "Specular", "ZIndex",
+	},
+	Texture = {
+		"Texture", "Transparency", "Face", "Color3", "Shiny", "Specular",
+		"StudsPerTileU", "StudsPerTileV", "OffsetStudsU", "OffsetStudsV", "ZIndex",
+	},
+	Model = {
+		"WorldPivot", "LevelOfDetail", "ModelStreamingMode", "PrimaryPart",
+	},
+	Tool = {
+		"CanBeDropped", "Enabled", "Grip", "GripForward", "GripPos", "GripRight", "GripUp",
+		"ManualActivationOnly", "RequiresHandle", "ToolTip",
+	},
+	Attachment = {
+		"Axis", "SecondaryAxis", "CFrame", "Position", "Orientation", "Visible",
+	},
+	Bone = {
+		"Transform", "CFrame", "Position", "Orientation",
+	},
+	Beam = {
+		"Color", "Transparency", "Texture", "TextureLength", "TextureMode", "TextureSpeed",
+		"Width0", "Width1", "CurveSize0", "CurveSize1", "FaceCamera", "LightEmission", "LightInfluence",
+		"Brightness", "Enabled", "Segments", "ZOffset",
+	},
+	Trail = {
+		"Color", "Transparency", "Texture", "TextureLength", "TextureMode", "WidthScale",
+		"FaceCamera", "LightEmission", "LightInfluence", "Brightness", "Enabled", "Lifetime",
+		"MaxLength", "MinLength",
+	},
+	ParticleEmitter = {
+		"Acceleration", "Brightness", "Color", "Drag", "EmissionDirection", "Enabled",
+		"FlipbookFramerate", "FlipbookIncompatible", "FlipbookLayout", "FlipbookMode",
+		"Lifetime", "LightEmission", "LightInfluence", "LockedToPart", "Orientation", "Rate",
+		"RotSpeed", "Rotation", "ShapeStyle", "ShapeInOut", "ShapePartial", "ShapeRotation",
+		"Size", "Speed", "SpreadAngle", "Squash", "Texture", "TimeScale", "Transparency",
+		"VelocityInheritance", "ZOffset",
+	},
+	GuiObject = {
+		"AnchorPoint", "AutomaticSize", "BackgroundColor3", "BackgroundTransparency",
+		"BorderColor3", "BorderMode", "BorderSizePixel", "ClipsDescendants", "LayoutOrder",
+		"Position", "Rotation", "Selectable", "SelectionOrder", "Size", "SizeConstraint",
+		"Visible", "ZIndex",
+	},
+	LayerCollector = {
+		"Enabled", "ResetOnSpawn", "ZIndexBehavior",
+	},
+	TextLabel = {
+		"Text", "FontFace", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
+		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextXAlignment",
+		"TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
+	},
+	TextButton = {
+		"Text", "FontFace", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
+		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextXAlignment",
+		"TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
+		"AutoButtonColor", "Modal", "Selected", "Style",
+	},
+	TextBox = {
+		"Text", "FontFace", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
+		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextXAlignment",
+		"TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
+		"ClearTextOnFocus", "MultiLine", "PlaceholderColor3", "PlaceholderText", "ShowNativeInput", "TextEditable",
+	},
+	ImageLabel = {
+		"Image", "ImageColor3", "ImageTransparency", "ImageRectOffset", "ImageRectSize",
+		"ResampleMode", "ScaleType", "SliceCenter", "SliceScale", "TileSize",
+	},
+	ImageButton = {
+		"Image", "ImageColor3", "ImageTransparency", "ImageRectOffset", "ImageRectSize",
+		"ResampleMode", "ScaleType", "SliceCenter", "SliceScale", "TileSize",
+		"AutoButtonColor", "HoverImage", "PressedImage", "Modal", "Selected", "Style",
+	},
+	ScrollingFrame = {
+		"AutomaticCanvasSize", "BottomImage", "CanvasPosition", "CanvasSize", "ElasticBehavior",
+		"HorizontalScrollBarInset", "MidImage", "ScrollBarImageColor3", "ScrollBarImageTransparency",
+		"ScrollBarThickness", "ScrollingDirection", "ScrollingEnabled", "TopImage",
+		"VerticalScrollBarInset", "VerticalScrollBarPosition",
+	},
+	UIListLayout = {
+		"FillDirection", "HorizontalAlignment", "HorizontalFlex", "ItemLineAlignment",
+		"Padding", "SortOrder", "VerticalAlignment", "VerticalFlex", "Wraps",
+	},
+	UIGridLayout = {
+		"CellPadding", "CellPaddingX", "CellPaddingY", "CellSize", "FillDirection",
+		"FillDirectionMaxCells", "HorizontalAlignment", "SortOrder", "StartCorner", "VerticalAlignment",
+	},
+	UIScale = {
+		"Scale",
+	},
+	UICorner = {
+		"CornerRadius",
+	},
+	UIStroke = {
+		"ApplyStrokeMode", "Color", "Enabled", "LineJoinMode", "Thickness", "Transparency",
+	},
+	UIGradient = {
+		"Color", "Enabled", "Offset", "Rotation", "Transparency",
+	},
+	Sound = {
+		"SoundId", "Volume", "PlaybackSpeed", "TimePosition", "Looped", "PlayOnRemove",
+		"RollOffMaxDistance", "RollOffMinDistance", "RollOffMode", "EmitterSize", "MaxDistance",
+		"PlaybackRegionsEnabled", "SoundGroup",
+	},
+}
+
+local function MergePropNames(Dest, Source)
+	for PropName in pairs(Source) do
+		Dest[PropName] = true
+	end
+end
+
+local function AddHintProps(Dest, Inst)
+	for ClassName, PropList in pairs(ExactPropertyHints) do
+		local Include = false
+		if ClassName == "Instance" then
+			Include = true
+		else
+			local ok, result = pcall(function()
+				return Inst:IsA(ClassName)
+			end)
+			Include = ok and result or false
+		end
+		if Include then
+			for _, PropName in ipairs(PropList) do
+				Dest[PropName] = true
+			end
+		end
+	end
+end
+
 local function ResolveFallbackProps(Inst)
 	local Merged = {}
 	local Class = Inst.ClassName
@@ -757,30 +912,35 @@ local function ResolveProps(Inst)
 		or ClassSkipProperties["BasePart"] and Inst:IsA("BasePart") and ClassSkipProperties["BasePart"]
 		or {}
 
+	local Props = {}
+
 	if getproperties then
 		local ok, Raw = pcall(getproperties, Inst)
 		if ok and type(Raw) == "table" then
-			local Props = {}
 			for K in pairs(Raw) do
-				if type(K) == "string"
-					and not SkipProperties[K]
-					and not ClassSkip[K]
-				then
+				if type(K) == "string" then
 					Props[K] = true
 				end
 			end
-			return Props
 		end
 	end
 
-	local Fallback = ResolveFallbackProps(Inst)
-	local Props    = {}
-	for K in pairs(Fallback) do
-		if not SkipProperties[K] and not ClassSkip[K] then
-			local ok = pcall(function() return Inst[K] end)
-			if ok then Props[K] = true end
+	MergePropNames(Props, ResolveFallbackProps(Inst))
+	AddHintProps(Props, Inst)
+
+	for K in pairs(Props) do
+		if SkipProperties[K] or ClassSkip[K] then
+			Props[K] = nil
+		else
+			local ok = pcall(function()
+				return Inst[K]
+			end)
+			if not ok then
+				Props[K] = nil
+			end
 		end
 	end
+
 	return Props
 end
 
@@ -1179,6 +1339,10 @@ local function ShouldSkipRedundantProperty(Inst, PropName, PropSet)
 		end
 	end
 
+	if PropSet.WorldPivot and Inst:IsA("Model") and PropName == "PrimaryPart" then
+		return false
+	end
+
 	if PropSet.WorldCFrame then
 		if (Inst:IsA("Attachment") or Inst:IsA("Bone")) and (
 			PropName == "WorldPosition"
@@ -1203,11 +1367,14 @@ local function GetPropertyOrderRank(Inst, PropName)
 		if PropName == "Size" then
 			return 2
 		end
-		if PropName == "CFrame" then
+		if PropName == "PivotOffset" then
 			return 3
 		end
-		if PropName == "Position" or PropName == "Orientation" or PropName == "Rotation" then
+		if PropName == "CFrame" then
 			return 4
+		end
+		if PropName == "Position" or PropName == "Orientation" or PropName == "Rotation" then
+			return 5
 		end
 	end
 
@@ -1220,8 +1387,13 @@ local function GetPropertyOrderRank(Inst, PropName)
 		end
 	end
 
-	if Inst:IsA("Model") and PropName == "WorldPivot" then
-		return 3
+	if Inst:IsA("Model") then
+		if PropName == "PrimaryPart" then
+			return 3
+		end
+		if PropName == "WorldPivot" then
+			return 90
+		end
 	end
 
 	return 50
@@ -1236,6 +1408,7 @@ local function Build(Target)
 
 	local Lines = {}
 	local DeferredRefs = {}
+	local DeferredLateProps = {}
 	local InstVarMap = {}
 	local UsedNames = {}
 	local NeedCS = false
@@ -1437,6 +1610,14 @@ local function Build(Target)
 	if #DeferredRefs > 0 then
 		PushSection("Instance Reference Properties")
 		for _, Line in ipairs(DeferredRefs) do
+			Push(Line)
+		end
+		PushBlank()
+	end
+
+	if #DeferredLateProps > 0 then
+		PushSection("Late Properties")
+		for _, Line in ipairs(DeferredLateProps) do
 			Push(Line)
 		end
 		PushBlank()
