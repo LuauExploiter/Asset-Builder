@@ -1,13 +1,15 @@
 --[[
-	Hiklo Serializer v4.3.0
+	Hiklo Serializer v4.4.0
 	- Fixed Enum.Style error.
 	- Characters (models containing Humanoid) are rejected.
 	- Generated output now uses objects[...] storage instead of per-instance locals.
-	- getproperties is merged with fallback and exact-hint props for better 1:1 output.
+	- Property discovery now merges getproperties/listproperties/hints more aggressively.
+	- Hidden properties are read when possible and writes fall back to sethiddenproperty.
+	- Script source capture prefers decompile() when available.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
-local VERSION = "4.3.0"
+local VERSION = "4.4.0"
 
 local SkipProperties = {
 	Parent                = true,
@@ -45,7 +47,6 @@ local SkipProperties = {
 	IsPaused              = true,
 	IsPlaying             = true,
 	TimeLength            = true,
-	SoundId               = true,
 }
 
 local ClassSkipProperties = {
@@ -859,6 +860,46 @@ local function MergePropNames(Dest, Source)
 	end
 end
 
+local function MergePropertyDump(Dest, Raw)
+	if type(Raw) ~= "table" then
+		return
+	end
+
+	for K, V in pairs(Raw) do
+		if type(K) == "string" then
+			Dest[K] = true
+		elseif type(V) == "string" then
+			Dest[V] = true
+		elseif type(V) == "table" then
+			local Name = rawget(V, "Name")
+				or rawget(V, "name")
+				or rawget(V, "Property")
+				or rawget(V, "property")
+			if type(Name) == "string" then
+				Dest[Name] = true
+			end
+		end
+	end
+end
+
+local function ReadProperty(Inst, PropName)
+	local ok, Value = pcall(function()
+		return Inst[PropName]
+	end)
+	if ok then
+		return true, Value
+	end
+
+	if gethiddenproperty then
+		local okHidden, HiddenValue = pcall(gethiddenproperty, Inst, PropName)
+		if okHidden then
+			return true, HiddenValue
+		end
+	end
+
+	return false, nil
+end
+
 local function AddHintProps(Dest, Inst)
 	for ClassName, PropList in pairs(ExactPropertyHints) do
 		local Include = false
@@ -914,14 +955,24 @@ local function ResolveProps(Inst)
 
 	local Props = {}
 
+	if listproperties then
+		local ok, Raw = pcall(listproperties, Inst)
+		if ok then
+			MergePropertyDump(Props, Raw)
+		end
+	end
+
 	if getproperties then
 		local ok, Raw = pcall(getproperties, Inst)
-		if ok and type(Raw) == "table" then
-			for K in pairs(Raw) do
-				if type(K) == "string" then
-					Props[K] = true
-				end
-			end
+		if ok then
+			MergePropertyDump(Props, Raw)
+		end
+	end
+
+	if gethiddenproperties then
+		local ok, Raw = pcall(gethiddenproperties, Inst)
+		if ok then
+			MergePropertyDump(Props, Raw)
 		end
 	end
 
@@ -932,9 +983,7 @@ local function ResolveProps(Inst)
 		if SkipProperties[K] or ClassSkip[K] then
 			Props[K] = nil
 		else
-			local ok = pcall(function()
-				return Inst[K]
-			end)
+			local ok = ReadProperty(Inst, K)
 			if not ok then
 				Props[K] = nil
 			end
@@ -1226,6 +1275,58 @@ local function SerializeValue(Val, InstVarMap)
 	return nil
 end
 
+local function GetScriptSource(Inst)
+	local okIsScript, isScript = pcall(function()
+		return Inst:IsA("LuaSourceContainer")
+	end)
+	if not okIsScript or not isScript then
+		return nil
+	end
+
+	if decompile then
+		local ok, Result = pcall(decompile, Inst)
+		if ok and type(Result) == "string" and Result ~= "" then
+			return Result
+		end
+	end
+
+	local ok, Result = ReadProperty(Inst, "Source")
+	if ok and type(Result) == "string" then
+		return Result
+	end
+
+	return nil
+end
+
+local function ShouldUseLateProperty(Inst, PropName, Value)
+	if typeof(Value) == "Instance" then
+		return true
+	end
+
+	if PropName == "WorldPivot"
+		or PropName == "PrimaryPart"
+		or PropName == "CFrame"
+		or PropName == "PivotOffset"
+		or PropName == "Adornee"
+		or PropName == "CurrentCamera"
+		or PropName == "Attachment0"
+		or PropName == "Attachment1"
+		or PropName == "Part0"
+		or PropName == "Part1"
+		or PropName == "MeshId"
+		or PropName == "TextureID"
+		or PropName == "TextureId"
+		or PropName == "Texture"
+		or PropName == "SoundId"
+		or PropName == "AnimationId"
+		or PropName == "Source"
+	then
+		return true
+	end
+
+	return false
+end
+
 local WritableProbeCache = {}
 local WritablePropertyCache = {}
 local ReservedNames = {
@@ -1480,9 +1581,12 @@ local function Build(Target)
 	end
 
 	Push('local function set(inst, prop, value)')
-	Push('	pcall(function()')
+	Push('	local ok = pcall(function()')
 	Push('		inst[prop] = value')
 	Push('	end)')
+	Push('	if not ok and sethiddenproperty then')
+	Push('		pcall(sethiddenproperty, inst, prop, value)')
+	Push('	end')
 	Push('end')
 	PushBlank()
 
@@ -1544,11 +1648,16 @@ local function Build(Target)
 		end
 
 		for _, PropName in ipairs(PropNames) do
-			local ok, Value = pcall(function()
-				return Inst[PropName]
-			end)
+			local ok, Value = ReadProperty(Inst, PropName)
 			if not ok then
 				continue
+			end
+
+			if PropName == "Source" then
+				local Decompiled = GetScriptSource(Inst)
+				if Decompiled ~= nil then
+					Value = Decompiled
+				end
 			end
 
 			local Serialized = SerializeValue(Value, InstVarMap)
@@ -1560,12 +1669,10 @@ local function Build(Target)
 				continue
 			end
 
-			if not CanWriteProperty(Inst, PropName, Value) then
-				continue
-			end
-
 			if typeof(Value) == "Instance" then
 				DeferredRefs[#DeferredRefs + 1] = string.format('set(%s, %q, %s)', Var, PropName, Serialized)
+			elseif ShouldUseLateProperty(Inst, PropName, Value) then
+				DeferredLateProps[#DeferredLateProps + 1] = string.format('set(%s, %q, %s)', Var, PropName, Serialized)
 			else
 				EnsureHeader()
 				Push('set(%s, %q, %s)', Var, PropName, Serialized)
@@ -1623,6 +1730,7 @@ local function Build(Target)
 		PushBlank()
 	end
 
+	Push('return objects[1]')
 	return table.concat(Lines, "\n")
 end
 
