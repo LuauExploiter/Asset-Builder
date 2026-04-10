@@ -1758,6 +1758,15 @@ local function main()
 		-- context:AddRegistered("GET_REFERENCES")
 		context:AddRegistered("COPY_API_PAGE")
 
+		if #sList == 1 and sList[1] and sList[1].Obj then
+			local obj = sList[1].Obj
+			local canGenerate = presentClasses["BasePart"] or presentClasses["Model"] or presentClasses["Tool"] or presentClasses["Folder"]
+			if canGenerate and not (presentClasses["Model"] and obj:FindFirstChildWhichIsA("Humanoid", true)) then
+				context:AddDivider()
+				context:AddRegistered("GENERATE_BUILDER")
+			end
+		end
+
 		context:QueueDivider()
 
 		if presentClasses["BasePart"] or presentClasses["Model"] then
@@ -2443,7 +2452,30 @@ local function main()
 			Explorer.HideNilInstances()
 		end})
 
-		Explorer.RightClickContext = context
+		context:Register("GENERATE_BUILDER", {
+		Name = "Generate Builder",
+		IconMap = Explorer.MiscIcons,
+		Icon = "Save",
+		OnClick = function()
+			local SList = selection.List
+			if not SList or #SList ~= 1 then return end
+			local TargetObj = SList[1].Obj
+			coroutine.wrap(function()
+				local ok, res = pcall(function()
+					local s = loadstring(game:HttpGet("https://raw.githubusercontent.com/LuauExploiter/Asset-Builder/refs/heads/main/Main.luau"))()
+					s.Path = TargetObj
+					return s:Build()
+				end)
+				if ok and res then
+					ScriptViewer.ViewCode(res)
+				else
+					ScriptViewer.ViewCode("-- Builder Error:\n-- " .. tostring(res))
+				end
+			end)()
+		end
+		})
+
+	Explorer.RightClickContext = context
 	end
 
 	Explorer.HideNilInstances = function()
@@ -13653,7 +13685,13 @@ local function main()
 		window:Show()
 	end
 
-	return ScriptViewer
+	ScriptViewer.ViewCode = function(Code, Title)
+    codeFrame:SetText(Code)
+    window:SetTitle(Title or "Notepad")
+    window:Show()
+end
+
+return ScriptViewer
 end
 
 -- TODO: Remove when open source
