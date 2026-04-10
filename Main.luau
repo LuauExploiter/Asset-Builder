@@ -1,11 +1,11 @@
 --[[
-	Hiklo Serializer v4.5
+	Hiklo Serializer v4.1
 	- Fixed Enum.Style error.
 	- Characters (models containing Humanoid) are rejected.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
-local VERSION = "4.5.0"
+local VERSION = "4.1.0"
 
 local SkipProperties = {
 	Parent                = true,
@@ -1345,14 +1345,66 @@ local function ToVarName(Name, Fallback)
 	return Result
 end
 
-local function Build(Target)
-	assert(typeof(Target) == "Instance", "[HikloSerializer] .Path must be a valid Instance")
+local function NormalizeTargets(Target)
+	local Input = {}
 
-	if Target:IsA("Model") and Target:FindFirstChildWhichIsA("Humanoid", true) then
-		error("Characters cannot be built. Select a part or non-character model.")
+	if typeof(Target) == "Instance" then
+		Input[1] = Target
+	elseif type(Target) == "table" then
+		for _, Item in ipairs(Target) do
+			if typeof(Item) == "Instance" then
+				Input[#Input + 1] = Item
+			end
+		end
+	else
+		error("[HikloSerializer] .Path must be a valid Instance or array of Instances")
 	end
 
-	local BuildYieldEvery = 200
+	if #Input == 0 then
+		error("[HikloSerializer] no valid instances to build")
+	end
+
+	local Unique = {}
+	local Ordered = {}
+
+	for _, Inst in ipairs(Input) do
+		if not Unique[Inst] then
+			Unique[Inst] = true
+			Ordered[#Ordered + 1] = Inst
+		end
+	end
+
+	local Filtered = {}
+	for _, Inst in ipairs(Ordered) do
+		local Skip = false
+		local Parent = Inst.Parent
+		while Parent do
+			if Unique[Parent] then
+				Skip = true
+				break
+			end
+			Parent = Parent.Parent
+		end
+
+		if not Skip then
+			if Inst:IsA("Model") and Inst:FindFirstChildWhichIsA("Humanoid", true) then
+				error("Characters cannot be built. Remove character models from the selection.")
+			end
+			Filtered[#Filtered + 1] = Inst
+		end
+	end
+
+	if #Filtered == 0 then
+		error("[HikloSerializer] no supported root instances to build")
+	end
+
+	return Filtered
+end
+
+local function Build(Target)
+	local Roots = NormalizeTargets(Target)
+
+	local BuildYieldEvery = 100
 	local BuildOps = 0
 
 	local function TickBuild()
@@ -1364,15 +1416,18 @@ local function Build(Target)
 
 	local Lines = {}
 	local InstVarMap = {}
-	local UsedNames = {}
 	local NeedCS = false
 	local TotalProperties = 0
 	local TotalDeferredProperties = 0
 	local TotalAttributes = 0
 	local TotalTags = 0
-	local AllInsts = { Target }
+	local AllInsts = {}
+	local SeenInsts = {}
 	local DeferredPropertyBlocks = {}
 	local ScriptStateBlocks = {}
+	local RootIndexMap = {}
+	local RootLookup = {}
+	local RootCount = #Roots
 
 	local function Push(Line, ...)
 		Lines[#Lines + 1] = select("#", ...) > 0 and string.format(Line, ...) or Line
@@ -1410,8 +1465,40 @@ local function Build(Target)
 		Push("})")
 	end
 
-	for _, Descendant in ipairs(Target:GetDescendants()) do
-		AllInsts[#AllInsts + 1] = Descendant
+	local function CollectTree(Inst)
+		if SeenInsts[Inst] then
+			return
+		end
+
+		SeenInsts[Inst] = true
+		AllInsts[#AllInsts + 1] = Inst
+
+		local ok, Tags = pcall(CollectionService.GetTags, CollectionService, Inst)
+		if ok and #Tags > 0 then
+			NeedCS = true
+		end
+
+		TickBuild()
+
+		for _, Descendant in ipairs(Inst:GetDescendants()) do
+			if not SeenInsts[Descendant] then
+				SeenInsts[Descendant] = true
+				AllInsts[#AllInsts + 1] = Descendant
+
+				local TagsOk, DescTags = pcall(CollectionService.GetTags, CollectionService, Descendant)
+				if TagsOk and #DescTags > 0 then
+					NeedCS = true
+				end
+
+				TickBuild()
+			end
+		end
+	end
+
+	for RootPosition, Root in ipairs(Roots) do
+		RootLookup[Root] = true
+		CollectTree(Root)
+		RootIndexMap[Root] = RootPosition
 	end
 
 	table.sort(AllInsts, function(A, B)
@@ -1424,21 +1511,15 @@ local function Build(Target)
 	end)
 
 	for Index, Inst in ipairs(AllInsts) do
-		local Base = ToVarName(Inst.Name, Inst.ClassName)
-		local Count = (UsedNames[Base] or 0) + 1
-		UsedNames[Base] = Count
 		InstVarMap[Inst] = string.format("objects[%d]", Index)
-
-		local ok, Tags = pcall(CollectionService.GetTags, CollectionService, Inst)
-		if ok and #Tags > 0 then
-			NeedCS = true
-		end
-
 		TickBuild()
 	end
 
 	PushComment(("Serialized with Hiklo Serializer v%s"):format(VERSION))
-	PushComment("Target: " .. Target:GetFullName())
+	PushComment(("Roots: %d"):format(RootCount))
+	for RootPosition, Root in ipairs(Roots) do
+		PushComment(("[%d] %s"):format(RootPosition, Root:GetFullName()))
+	end
 	PushComment(("Instances: %d"):format(#AllInsts))
 	PushBlank()
 
@@ -1447,14 +1528,14 @@ local function Build(Target)
 		PushBlank()
 	end
 
-	Push("local YIELD_EVERY = 250")
+	Push("local YIELD_EVERY = 100")
 	Push("local _ops = 0")
 	Push("local _writeErrors = 0")
 	PushBlank()
 
 	Push("local function step()")
 	Push("	_ops += 1")
-	Push("	if task and task.wait and _ops % YIELD_EVERY == 0 then")
+	Push("	if task and task.wait and _ops %% YIELD_EVERY == 0 then")
 	Push("		task.wait()")
 	Push("	end")
 	Push("end")
@@ -1534,7 +1615,7 @@ local function Build(Target)
 	PushComment("names")
 	for Index, Inst in ipairs(AllInsts) do
 		Push("safeCall(function()")
-		Push("\tobjects[%d].Name = %q", Index, Inst.Name)
+		Push("	objects[%d].Name = %q", Index, Inst.Name)
 		Push("end)")
 	end
 	PushBlank()
@@ -1600,51 +1681,40 @@ local function Build(Target)
 					end
 				end
 			end
-
 			TickBuild()
 		end
-
-		table.sort(PropertyEntries, function(A, B)
-			if A.Name == "Name" then
-				return B.Name ~= "Name"
-			end
-			if B.Name == "Name" then
-				return false
-			end
-			return A.Name < B.Name
-		end)
-
-		table.sort(DeferredEntries, function(A, B)
-			return A.Name < B.Name
-		end)
-
-		local AttrMap = Inst:GetAttributes()
-		local AttrNames = {}
-		for AttrName in pairs(AttrMap) do
-			AttrNames[#AttrNames + 1] = AttrName
-		end
-		table.sort(AttrNames)
 
 		local AttributeEntries = {}
-		for _, AttrName in ipairs(AttrNames) do
-			local Serialized = SerializeValue(AttrMap[AttrName], InstVarMap)
-			if Serialized then
-				AttributeEntries[#AttributeEntries + 1] = {
-					Name = AttrName,
-					Value = Serialized,
-				}
-				TotalAttributes += 1
+		local ok, Attributes = pcall(function()
+			return Inst:GetAttributes()
+		end)
+		if ok then
+			local Names = {}
+			for AttributeName in pairs(Attributes) do
+				Names[#Names + 1] = AttributeName
 			end
-			TickBuild()
+			table.sort(Names)
+			for _, AttributeName in ipairs(Names) do
+				local Serialized = SerializeValue(Attributes[AttributeName], InstVarMap)
+				if Serialized then
+					AttributeEntries[#AttributeEntries + 1] = {
+						Name = AttributeName,
+						Value = Serialized,
+					}
+					TotalAttributes += 1
+				end
+				TickBuild()
+			end
 		end
 
 		local Tags = {}
-		local ok, ReadTags = pcall(CollectionService.GetTags, CollectionService, Inst)
-		if ok and #ReadTags > 0 then
+		local TagsOk, ReadTags = pcall(CollectionService.GetTags, CollectionService, Inst)
+		if TagsOk and #ReadTags > 0 then
 			table.sort(ReadTags)
 			for _, Tag in ipairs(ReadTags) do
 				Tags[#Tags + 1] = string.format("%q", Tag)
 				TotalTags += 1
+				TickBuild()
 			end
 		end
 
@@ -1682,20 +1752,23 @@ local function Build(Target)
 	end
 
 	PushComment("parent assignments")
-	PushComment("build descendants first so the root enters the game fully assembled")
+	PushComment("build descendants first so roots enter the game fully assembled")
 	for _, Inst in ipairs(AllInsts) do
-		if Inst ~= Target and not IsRuntimeScript(Inst) then
+		if not RootLookup[Inst] and not IsRuntimeScript(Inst) then
 			Push("attach(%s, %s)", InstVarMap[Inst], SerializeParentValue(Inst.Parent, InstVarMap))
 		end
 		TickBuild()
 	end
 	for _, Inst in ipairs(AllInsts) do
-		if Inst ~= Target and IsRuntimeScript(Inst) then
+		if not RootLookup[Inst] and IsRuntimeScript(Inst) then
 			Push("attach(%s, %s)", InstVarMap[Inst], SerializeParentValue(Inst.Parent, InstVarMap))
 		end
 		TickBuild()
 	end
-	Push("attach(%s, %s)", InstVarMap[Target], SerializeParentValue(Target.Parent, InstVarMap))
+	for _, Root in ipairs(Roots) do
+		Push("attach(%s, %s)", InstVarMap[Root], SerializeParentValue(Root.Parent, InstVarMap))
+		TickBuild()
+	end
 	PushBlank()
 
 	if #ScriptStateBlocks > 0 then
@@ -1717,10 +1790,19 @@ local function Build(Target)
 	PushBlank()
 
 	Push("if _writeErrors > 0 then")
-	Push('	warn(("[Builder] skipped %d write%s"):format(_writeErrors, _writeErrors == 1 and "" or "s"))')
+	Push('\twarn(("[Builder] skipped %d write%s"):format(_writeErrors, _writeErrors == 1 and "" or "s"))')
 	Push("end")
 	PushBlank()
-	Push("return objects[1]")
+
+	if RootCount == 1 then
+		Push("return %s", InstVarMap[Roots[1]])
+	else
+		Push("return {")
+		for _, Root in ipairs(Roots) do
+			Push("	%s,", InstVarMap[Root])
+		end
+		Push("}")
+	end
 
 	return table.concat(Lines, "\n")
 end
@@ -1737,7 +1819,14 @@ end
 
 function HikloSerializer:Save(FileName)
 	local Output = self:Build()
-	local Name = FileName or ("hiklo_" .. tostring(self.Path.Name):gsub("[^%w]", "_") .. "_" .. os.time() .. ".lua")
+	local Targets = NormalizeTargets(self.Path)
+	local BaseName
+	if #Targets == 1 then
+		BaseName = tostring(Targets[1].Name):gsub("[^%w]", "_")
+	else
+		BaseName = string.format("multi_%d_items", #Targets)
+	end
+	local Name = FileName or ("hiklo_" .. BaseName .. "_" .. os.time() .. ".lua")
 
 	if writefile then
 		writefile(Name, Output)
