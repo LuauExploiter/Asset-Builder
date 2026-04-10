@@ -5,7 +5,7 @@
 ]]
 
 local CollectionService = game:GetService("CollectionService")
-local VERSION = "4.0.0"
+local VERSION = "4.5.0"
 
 local SkipProperties = {
 	Parent                = true,
@@ -44,6 +44,17 @@ local SkipProperties = {
 	IsPlaying             = true,
 	TimeLength            = true,
 	SoundId               = true,
+	HistoryId             = true,
+	UniqueId              = true,
+	Attributes            = true,
+	AttributesReplicate   = true,
+	AttributesSerialize   = true,
+	Tags                  = true,
+	Capabilities          = true,
+	DefinesCapabilities   = true,
+	numExpectedDirectChildren = true,
+	SourceAssetId         = true,
+	SelectionBox          = true,
 }
 
 local ClassSkipProperties = {
@@ -1241,6 +1252,49 @@ local function IsRuntimeScript(Inst)
 	return Inst:IsA("BaseScript")
 end
 
+local function ShouldDecompileSource(Inst)
+	if Inst:IsA("ModuleScript") or Inst:IsA("LocalScript") then
+		return true
+	end
+
+	if Inst:IsA("Script") then
+		local ok, runContext = pcall(function()
+			return Inst.RunContext
+		end)
+		return ok and runContext == Enum.RunContext.Client
+	end
+
+	return false
+end
+
+local function ReadSourceValue(Inst)
+	if not ShouldDecompileSource(Inst) then
+		local ok, value = pcall(function()
+			return Inst.Source
+		end)
+		if ok then
+			return value, true
+		end
+		return nil, false
+	end
+
+	if decompile then
+		local ok, value = pcall(decompile, Inst)
+		if ok and type(value) == "string" then
+			return value, true
+		end
+	end
+
+	local ok, value = pcall(function()
+		return Inst.Source
+	end)
+	if ok then
+		return value, true
+	end
+
+	return nil, false
+end
+
 local function GetDepth(Inst)
 	local Depth = 0
 	local Current = Inst.Parent
@@ -1501,9 +1555,14 @@ local function Build(Target)
 		local DeferredEntries = {}
 		for _, PropName in ipairs(PropNames) do
 			if PropName ~= "Name" then
-				local ok, Value = pcall(function()
-					return Inst[PropName]
-				end)
+				local ok, Value
+				if PropName == "Source" then
+					Value, ok = ReadSourceValue(Inst)
+				else
+					ok, Value = pcall(function()
+						return Inst[PropName]
+					end)
+				end
 
 				if ok and CanWriteProperty(Inst, PropName, Value) then
 					local Serialized = SerializeValue(Value, InstVarMap)
@@ -1623,18 +1682,20 @@ local function Build(Target)
 	end
 
 	PushComment("parent assignments")
+	PushComment("build descendants first so the root enters the game fully assembled")
 	for _, Inst in ipairs(AllInsts) do
-		if not IsRuntimeScript(Inst) then
+		if Inst ~= Target and not IsRuntimeScript(Inst) then
 			Push("attach(%s, %s)", InstVarMap[Inst], SerializeParentValue(Inst.Parent, InstVarMap))
 		end
 		TickBuild()
 	end
 	for _, Inst in ipairs(AllInsts) do
-		if IsRuntimeScript(Inst) then
+		if Inst ~= Target and IsRuntimeScript(Inst) then
 			Push("attach(%s, %s)", InstVarMap[Inst], SerializeParentValue(Inst.Parent, InstVarMap))
 		end
 		TickBuild()
 	end
+	Push("attach(%s, %s)", InstVarMap[Target], SerializeParentValue(Target.Parent, InstVarMap))
 	PushBlank()
 
 	if #ScriptStateBlocks > 0 then
