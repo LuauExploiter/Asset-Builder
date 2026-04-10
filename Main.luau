@@ -1237,6 +1237,10 @@ local function SerializeParentValue(Parent, InstVarMap)
 	return "nil"
 end
 
+local function IsRuntimeScript(Inst)
+	return Inst:IsA("BaseScript")
+end
+
 local function GetDepth(Inst)
 	local Depth = 0
 	local Current = Inst.Parent
@@ -1314,6 +1318,7 @@ local function Build(Target)
 	local TotalTags = 0
 	local AllInsts = { Target }
 	local DeferredPropertyBlocks = {}
+	local ScriptStateBlocks = {}
 
 	local function Push(Line, ...)
 		Lines[#Lines + 1] = select("#", ...) > 0 and string.format(Line, ...) or Line
@@ -1462,6 +1467,16 @@ local function Build(Target)
 	end
 	PushBlank()
 
+	PushComment("hold runtime scripts")
+	for _, Inst in ipairs(AllInsts) do
+		if IsRuntimeScript(Inst) then
+			Push("safeCall(function()")
+			Push("	%s.Disabled = true", InstVarMap[Inst])
+			Push("end)")
+		end
+	end
+	PushBlank()
+
 	PushComment("names")
 	for Index, Inst in ipairs(AllInsts) do
 		Push("safeCall(function()")
@@ -1491,29 +1506,39 @@ local function Build(Target)
 				end)
 
 				if ok and CanWriteProperty(Inst, PropName, Value) then
-				local Serialized = SerializeValue(Value, InstVarMap)
-				if Serialized then
-					local DefaultValue, HasDefault = GetDefaultPropertyValue(Inst, PropName)
-					if not HasDefault then
-						DefaultValue = FallbackDefaults[PropName]
-						HasDefault = DefaultValue ~= nil
-					end
-
-					if not HasDefault or not ValuesEqual(Value, DefaultValue, InstVarMap) then
-						local Entry = {
-							Name = PropName,
-							Value = Serialized,
-						}
-
-						if typeof(Value) == "Instance" then
-							DeferredEntries[#DeferredEntries + 1] = Entry
-							TotalDeferredProperties += 1
-						else
-							PropertyEntries[#PropertyEntries + 1] = Entry
+					local Serialized = SerializeValue(Value, InstVarMap)
+					if Serialized then
+						if PropName == "Disabled" and IsRuntimeScript(Inst) then
+							ScriptStateBlocks[#ScriptStateBlocks + 1] = {
+								VarName = VarName,
+								Value = Serialized,
+								ClassName = Inst.ClassName,
+								Name = Inst.Name,
+							}
 							TotalProperties += 1
+						else
+							local DefaultValue, HasDefault = GetDefaultPropertyValue(Inst, PropName)
+							if not HasDefault then
+								DefaultValue = FallbackDefaults[PropName]
+								HasDefault = DefaultValue ~= nil
+							end
+
+							if not HasDefault or not ValuesEqual(Value, DefaultValue, InstVarMap) then
+								local Entry = {
+									Name = PropName,
+									Value = Serialized,
+								}
+
+								if typeof(Value) == "Instance" then
+									DeferredEntries[#DeferredEntries + 1] = Entry
+									TotalDeferredProperties += 1
+								else
+									PropertyEntries[#PropertyEntries + 1] = Entry
+									TotalProperties += 1
+								end
+							end
 						end
 					end
-				end
 				end
 			end
 
@@ -1588,18 +1613,37 @@ local function Build(Target)
 		end
 	end
 
-	PushComment("parent assignments")
-	for _, Inst in ipairs(AllInsts) do
-		Push("attach(%s, %s)", InstVarMap[Inst], SerializeParentValue(Inst.Parent, InstVarMap))
-		TickBuild()
-	end
-	PushBlank()
-
 	if #DeferredPropertyBlocks > 0 then
 		PushComment("instance reference properties")
 		for _, Block in ipairs(DeferredPropertyBlocks) do
 			PushComment(("[%s] %s"):format(Block.ClassName, Block.Name))
 			PushMapCall("applyProperties", Block.VarName, Block.Entries)
+			PushBlank()
+		end
+	end
+
+	PushComment("parent assignments")
+	for _, Inst in ipairs(AllInsts) do
+		if not IsRuntimeScript(Inst) then
+			Push("attach(%s, %s)", InstVarMap[Inst], SerializeParentValue(Inst.Parent, InstVarMap))
+		end
+		TickBuild()
+	end
+	for _, Inst in ipairs(AllInsts) do
+		if IsRuntimeScript(Inst) then
+			Push("attach(%s, %s)", InstVarMap[Inst], SerializeParentValue(Inst.Parent, InstVarMap))
+		end
+		TickBuild()
+	end
+	PushBlank()
+
+	if #ScriptStateBlocks > 0 then
+		PushComment("restore runtime scripts")
+		for _, Block in ipairs(ScriptStateBlocks) do
+			PushComment(("[%s] %s"):format(Block.ClassName, Block.Name))
+			Push("safeCall(function()")
+			Push("	%s.Disabled = %s", Block.VarName, Block.Value)
+			Push("end)")
 			PushBlank()
 		end
 	end
