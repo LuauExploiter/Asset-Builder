@@ -1,15 +1,16 @@
 --[[
-	Hiklo Serializer v4.4.0
+	Hiklo Serializer v4.5.0
 	- Fixed Enum.Style error.
 	- Characters (models containing Humanoid) are rejected.
 	- Generated output now uses objects[...] storage instead of per-instance locals.
 	- Property discovery now merges getproperties/listproperties/hints more aggressively.
 	- Hidden properties are read when possible and writes fall back to sethiddenproperty.
 	- Script source capture prefers decompile() when available.
+	- Better GUI/Billboard/Text property coverage for gradients, strokes, fonts, and visual styling.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
-local VERSION = "4.4.0"
+local VERSION = "4.5.0"
 
 local SkipProperties = {
 	Parent                = true,
@@ -795,21 +796,36 @@ local ExactPropertyHints = {
 	LayerCollector = {
 		"Enabled", "ResetOnSpawn", "ZIndexBehavior",
 	},
+	ScreenGui = {
+		"ClipToDeviceSafeArea", "DisplayOrder", "Enabled", "IgnoreGuiInset", "OnTopOfCoreBlur",
+		"ResetOnSpawn", "ScreenInsets", "SafeAreaCompatibility", "ZIndexBehavior",
+	},
+	BillboardGui = {
+		"Active", "Adornee", "AlwaysOnTop", "Brightness", "ClipsDescendants", "Enabled",
+		"ExtentsOffset", "ExtentsOffsetWorldSpace", "LightInfluence", "MaxDistance",
+		"PlayerToHideFrom", "Size", "SizeOffset", "StudsOffset", "StudsOffsetWorldSpace",
+		"DistanceStep", "ZIndexBehavior",
+	},
+	SurfaceGui = {
+		"Active", "Adornee", "AlwaysOnTop", "Brightness", "CanvasSize", "ClipsDescendants",
+		"Enabled", "Face", "LightInfluence", "MaxDistance", "PixelsPerStud",
+		"SizingMode", "ToolPunchThroughDistance", "ZIndexBehavior",
+	},
 	TextLabel = {
-		"Text", "FontFace", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
-		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextXAlignment",
-		"TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
+		"Text", "Font", "FontFace", "OpenTypeFeatures", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
+		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextDirection", "TextTruncate",
+		"TextXAlignment", "TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
 	},
 	TextButton = {
-		"Text", "FontFace", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
-		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextXAlignment",
-		"TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
+		"Text", "Font", "FontFace", "OpenTypeFeatures", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
+		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextDirection", "TextTruncate",
+		"TextXAlignment", "TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
 		"AutoButtonColor", "Modal", "Selected", "Style",
 	},
 	TextBox = {
-		"Text", "FontFace", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
-		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextXAlignment",
-		"TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
+		"Text", "Font", "FontFace", "OpenTypeFeatures", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
+		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextDirection", "TextTruncate",
+		"TextXAlignment", "TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
 		"ClearTextOnFocus", "MultiLine", "PlaceholderColor3", "PlaceholderText", "ShowNativeInput", "TextEditable",
 	},
 	ImageLabel = {
@@ -1205,7 +1221,7 @@ local function SerializeValue(Val, InstVarMap)
 
 	if T == "Font" then
 		return string.format(
-			'Font.new("%s", Enum.FontWeight.%s, Enum.FontStyle.%s)',
+			'Font.new(%q, Enum.FontWeight.%s, Enum.FontStyle.%s)',
 			Val.Family, Val.Weight.Name, Val.Style.Name
 		)
 	end
@@ -1494,6 +1510,60 @@ local function GetPropertyOrderRank(Inst, PropName)
 		end
 		if PropName == "WorldPivot" then
 			return 90
+		end
+	end
+
+	if Inst:IsA("BillboardGui") or Inst:IsA("SurfaceGui") or Inst:IsA("ScreenGui") then
+		if PropName == "Adornee" then
+			return 80
+		end
+	end
+
+	if Inst:IsA("TextLabel") or Inst:IsA("TextButton") or Inst:IsA("TextBox") then
+		if PropName == "Font" then
+			return 1
+		end
+		if PropName == "FontFace" then
+			return 2
+		end
+		if PropName == "OpenTypeFeatures" then
+			return 3
+		end
+		if PropName == "TextSize" then
+			return 4
+		end
+		if PropName == "TextScaled" then
+			return 5
+		end
+		if PropName == "TextWrapped" then
+			return 6
+		end
+		if PropName == "RichText" then
+			return 7
+		end
+		if PropName == "TextDirection" or PropName == "TextTruncate" then
+			return 8
+		end
+		if PropName == "TextColor3" then
+			return 9
+		end
+		if PropName == "TextTransparency" then
+			return 10
+		end
+		if PropName == "TextStrokeColor3" then
+			return 11
+		end
+		if PropName == "TextStrokeTransparency" then
+			return 12
+		end
+		if PropName == "TextXAlignment" or PropName == "TextYAlignment" then
+			return 13
+		end
+		if PropName == "LineHeight" or PropName == "MaxVisibleGraphemes" then
+			return 14
+		end
+		if PropName == "Text" then
+			return 15
 		end
 	end
 
