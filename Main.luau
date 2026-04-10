@@ -1,11 +1,11 @@
 --[[
-	Hiklo Serializer v4.0
+	Hiklo Serializer v4.1
 	- Fixed Enum.Style error.
 	- Characters (models containing Humanoid) are rejected.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
-local VERSION = "4.0.0"
+local VERSION = "4.1.0"
 
 local SkipProperties = {
 	Parent                = true,
@@ -1236,7 +1236,6 @@ local function Build(Target)
 	local Lines = {}
 	local DeferredRefs = {}
 	local InstVarMap = {}
-	local UsedNames = {}
 	local NeedCS = false
 
 	local function Push(S, ...)
@@ -1254,41 +1253,13 @@ local function Build(Target)
 		PushBlank()
 	end
 
-	local function MakeVar(Inst)
-		local Base = Inst.Name:gsub("[^%w_]", "_")
-		Base = Base:gsub("_+", "_")
-		Base = Base:gsub("^_+", "")
-		Base = Base:gsub("_+$", "")
-
-		if Base == "" then
-			Base = Inst.ClassName
-		end
-
-		if Base:match("^%d") then
-			Base = "_" .. Base
-		end
-
-		if ReservedNames[Base] then
-			Base = Base .. "_obj"
-		end
-
-		local Count = (UsedNames[Base] or 0) + 1
-		UsedNames[Base] = Count
-
-		if Count == 1 then
-			return Base
-		end
-
-		return Base .. Count
-	end
-
 	local AllInsts = { Target }
 	for _, Descendant in ipairs(Target:GetDescendants()) do
 		AllInsts[#AllInsts + 1] = Descendant
 	end
 
-	for _, Inst in ipairs(AllInsts) do
-		InstVarMap[Inst] = MakeVar(Inst)
+	for Index, Inst in ipairs(AllInsts) do
+		InstVarMap[Inst] = string.format("objects[%d]", Index)
 		if #CollectionService:GetTags(Inst) > 0 then
 			NeedCS = true
 		end
@@ -1335,8 +1306,9 @@ local function Build(Target)
 	end
 
 	PushSection("Instance Declarations")
-	for _, Inst in ipairs(AllInsts) do
-		Push('local %s = Instance.new(%q)', InstVarMap[Inst], Inst.ClassName)
+	Push('local objects = table.create(%d)', #AllInsts)
+	for Index, Inst in ipairs(AllInsts) do
+		Push('objects[%d] = Instance.new(%q)', Index, Inst.ClassName)
 	end
 	PushBlank()
 
