@@ -1,5 +1,5 @@
 --[[
-	Hiklo Serializer v4.0
+	Hiklo Serializer v4.5
 	- Fixed Enum.Style error.
 	- Characters (models containing Humanoid) are rejected.
 ]]
