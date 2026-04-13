@@ -1,11 +1,5 @@
---[[
-	Hiklo Serializer v3.1
-	- Fixed Enum.Style error.
-	- Supports characters and most instance types; root services are rejected.
-]]
-
 local CollectionService = game:GetService("CollectionService")
-local VERSION = "4.0.0"
+local VERSION = "4.6.0"
 
 local SkipProperties = {
 	Parent                = true,
@@ -43,7 +37,6 @@ local SkipProperties = {
 	IsPaused              = true,
 	IsPlaying             = true,
 	TimeLength            = true,
-	SoundId               = true,
 }
 
 local ClassSkipProperties = {
@@ -102,7 +95,6 @@ FallbackProperties["Part"] = {
 
 FallbackProperties["WedgePart"]         = {}
 FallbackProperties["CornerWedgePart"]   = {}
--- FIXED: Removed invalid Enum.Style reference
 FallbackProperties["TrussPart"]         = {}
 FallbackProperties["SpawnLocation"]     = { AllowTeamChangeOnTouch = false, Duration = 10, Enabled = true, Neutral = true, TeamColor = BrickColor.new("White") }
 FallbackProperties["Platform"]          = {}
@@ -722,6 +714,209 @@ for _, Class in ipairs(TextClasses) do
 	for K, V in pairs(TextBase) do if T[K] == nil then T[K] = V end end
 end
 
+
+local ExactPropertyHints = {
+	Instance = {
+		"Name",
+	},
+	BasePart = {
+		"Anchored", "Size", "CFrame", "PivotOffset", "Position", "Orientation", "Rotation",
+		"BrickColor", "Color", "Material", "MaterialVariant", "Transparency", "Reflectance",
+		"CanCollide", "CanTouch", "CanQuery", "CastShadow", "Locked", "Massless",
+		"CustomPhysicalProperties", "TopSurface", "BottomSurface", "LeftSurface", "RightSurface",
+		"FrontSurface", "BackSurface", "TopParamA", "TopParamB", "BottomParamA", "BottomParamB",
+		"LeftParamA", "LeftParamB", "RightParamA", "RightParamB", "FrontParamA", "FrontParamB",
+		"BackParamA", "BackParamB", "CollisionGroup", "RootPriority",
+	},
+	Part = {
+		"Shape",
+	},
+	MeshPart = {
+		"MeshId", "MeshSize", "TextureID", "RenderFidelity", "DoubleSided",
+	},
+	SpecialMesh = {
+		"MeshType", "MeshId", "TextureId", "Scale", "Offset", "VertexColor", "RotationOffset",
+	},
+	Decal = {
+		"Texture", "Transparency", "Face", "Color3", "Shiny", "Specular", "ZIndex",
+	},
+	Texture = {
+		"Texture", "Transparency", "Face", "Color3", "Shiny", "Specular",
+		"StudsPerTileU", "StudsPerTileV", "OffsetStudsU", "OffsetStudsV", "ZIndex",
+	},
+	Model = {
+		"WorldPivot", "LevelOfDetail", "ModelStreamingMode", "PrimaryPart",
+	},
+	Tool = {
+		"CanBeDropped", "Enabled", "Grip", "GripForward", "GripPos", "GripRight", "GripUp",
+		"ManualActivationOnly", "RequiresHandle", "ToolTip",
+	},
+	Script = {
+		"Disabled", "RunContext", "Source",
+	},
+	LocalScript = {
+		"Disabled", "Source",
+	},
+	ModuleScript = {
+		"Source",
+	},
+	Attachment = {
+		"Axis", "SecondaryAxis", "CFrame", "Position", "Orientation", "Visible",
+	},
+	Bone = {
+		"Transform", "CFrame", "Position", "Orientation",
+	},
+	Beam = {
+		"Color", "Transparency", "Texture", "TextureLength", "TextureMode", "TextureSpeed",
+		"Width0", "Width1", "CurveSize0", "CurveSize1", "FaceCamera", "LightEmission", "LightInfluence",
+		"Brightness", "Enabled", "Segments", "ZOffset",
+	},
+	Trail = {
+		"Color", "Transparency", "Texture", "TextureLength", "TextureMode", "WidthScale",
+		"FaceCamera", "LightEmission", "LightInfluence", "Brightness", "Enabled", "Lifetime",
+		"MaxLength", "MinLength",
+	},
+	ParticleEmitter = {
+		"Acceleration", "Brightness", "Color", "Drag", "EmissionDirection", "Enabled",
+		"FlipbookFramerate", "FlipbookIncompatible", "FlipbookLayout", "FlipbookMode",
+		"Lifetime", "LightEmission", "LightInfluence", "LockedToPart", "Orientation", "Rate",
+		"RotSpeed", "Rotation", "ShapeStyle", "ShapeInOut", "ShapePartial", "ShapeRotation",
+		"Size", "Speed", "SpreadAngle", "Squash", "Texture", "TimeScale", "Transparency",
+		"VelocityInheritance", "ZOffset",
+	},
+	GuiObject = {
+		"AnchorPoint", "AutomaticSize", "BackgroundColor3", "BackgroundTransparency",
+		"BorderColor3", "BorderMode", "BorderSizePixel", "ClipsDescendants", "LayoutOrder",
+		"Position", "Rotation", "Selectable", "SelectionOrder", "Size", "SizeConstraint",
+		"Visible", "ZIndex",
+	},
+	LayerCollector = {
+		"Enabled", "ResetOnSpawn", "ZIndexBehavior",
+	},
+	TextLabel = {
+		"Text", "FontFace", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
+		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextXAlignment",
+		"TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
+	},
+	TextButton = {
+		"Text", "FontFace", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
+		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextXAlignment",
+		"TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
+		"AutoButtonColor", "Modal", "Selected", "Style",
+	},
+	TextBox = {
+		"Text", "FontFace", "TextColor3", "TextSize", "TextScaled", "TextWrapped",
+		"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextXAlignment",
+		"TextYAlignment", "RichText", "LineHeight", "MaxVisibleGraphemes",
+		"ClearTextOnFocus", "MultiLine", "PlaceholderColor3", "PlaceholderText", "ShowNativeInput", "TextEditable",
+	},
+	ImageLabel = {
+		"Image", "ImageColor3", "ImageTransparency", "ImageRectOffset", "ImageRectSize",
+		"ResampleMode", "ScaleType", "SliceCenter", "SliceScale", "TileSize",
+	},
+	ImageButton = {
+		"Image", "ImageColor3", "ImageTransparency", "ImageRectOffset", "ImageRectSize",
+		"ResampleMode", "ScaleType", "SliceCenter", "SliceScale", "TileSize",
+		"AutoButtonColor", "HoverImage", "PressedImage", "Modal", "Selected", "Style",
+	},
+	ScrollingFrame = {
+		"AutomaticCanvasSize", "BottomImage", "CanvasPosition", "CanvasSize", "ElasticBehavior",
+		"HorizontalScrollBarInset", "MidImage", "ScrollBarImageColor3", "ScrollBarImageTransparency",
+		"ScrollBarThickness", "ScrollingDirection", "ScrollingEnabled", "TopImage",
+		"VerticalScrollBarInset", "VerticalScrollBarPosition",
+	},
+	UIListLayout = {
+		"FillDirection", "HorizontalAlignment", "HorizontalFlex", "ItemLineAlignment",
+		"Padding", "SortOrder", "VerticalAlignment", "VerticalFlex", "Wraps",
+	},
+	UIGridLayout = {
+		"CellPadding", "CellPaddingX", "CellPaddingY", "CellSize", "FillDirection",
+		"FillDirectionMaxCells", "HorizontalAlignment", "SortOrder", "StartCorner", "VerticalAlignment",
+	},
+	UIScale = {
+		"Scale",
+	},
+	UICorner = {
+		"CornerRadius",
+	},
+	UIStroke = {
+		"ApplyStrokeMode", "Color", "Enabled", "LineJoinMode", "Thickness", "Transparency",
+	},
+	UIGradient = {
+		"Color", "Enabled", "Offset", "Rotation", "Transparency",
+	},
+	Sound = {
+		"SoundId", "Volume", "PlaybackSpeed", "TimePosition", "Looped", "PlayOnRemove",
+		"RollOffMaxDistance", "RollOffMinDistance", "RollOffMode", "EmitterSize", "MaxDistance",
+		"PlaybackRegionsEnabled", "SoundGroup",
+	},
+}
+
+local function MergePropNames(Dest, Source)
+	for PropName in pairs(Source) do
+		Dest[PropName] = true
+	end
+end
+
+local function MergePropertyDump(Dest, Raw)
+	if type(Raw) ~= "table" then
+		return
+	end
+
+	for K, V in pairs(Raw) do
+		if type(K) == "string" then
+			Dest[K] = true
+		elseif type(V) == "string" then
+			Dest[V] = true
+		elseif type(V) == "table" then
+			local Name = rawget(V, "Name")
+				or rawget(V, "name")
+				or rawget(V, "Property")
+				or rawget(V, "property")
+			if type(Name) == "string" then
+				Dest[Name] = true
+			end
+		end
+	end
+end
+
+local function ReadProperty(Inst, PropName)
+	local ok, Value = pcall(function()
+		return Inst[PropName]
+	end)
+	if ok then
+		return true, Value
+	end
+
+	if gethiddenproperty then
+		local okHidden, HiddenValue = pcall(gethiddenproperty, Inst, PropName)
+		if okHidden then
+			return true, HiddenValue
+		end
+	end
+
+	return false, nil
+end
+
+local function AddHintProps(Dest, Inst)
+	for ClassName, PropList in pairs(ExactPropertyHints) do
+		local Include = false
+		if ClassName == "Instance" then
+			Include = true
+		else
+			local ok, result = pcall(function()
+				return Inst:IsA(ClassName)
+			end)
+			Include = ok and result or false
+		end
+		if Include then
+			for _, PropName in ipairs(PropList) do
+				Dest[PropName] = true
+			end
+		end
+	end
+end
+
 local function ResolveFallbackProps(Inst)
 	local Merged = {}
 	local Class = Inst.ClassName
@@ -756,30 +951,43 @@ local function ResolveProps(Inst)
 		or ClassSkipProperties["BasePart"] and Inst:IsA("BasePart") and ClassSkipProperties["BasePart"]
 		or {}
 
-	if getproperties then
-		local ok, Raw = pcall(getproperties, Inst)
-		if ok and type(Raw) == "table" then
-			local Props = {}
-			for K in pairs(Raw) do
-				if type(K) == "string"
-					and not SkipProperties[K]
-					and not ClassSkip[K]
-				then
-					Props[K] = true
-				end
-			end
-			return Props
+	local Props = {}
+
+	if listproperties then
+		local ok, Raw = pcall(listproperties, Inst)
+		if ok then
+			MergePropertyDump(Props, Raw)
 		end
 	end
 
-	local Fallback = ResolveFallbackProps(Inst)
-	local Props    = {}
-	for K in pairs(Fallback) do
-		if not SkipProperties[K] and not ClassSkip[K] then
-			local ok = pcall(function() return Inst[K] end)
-			if ok then Props[K] = true end
+	if getproperties then
+		local ok, Raw = pcall(getproperties, Inst)
+		if ok then
+			MergePropertyDump(Props, Raw)
 		end
 	end
+
+	if gethiddenproperties then
+		local ok, Raw = pcall(gethiddenproperties, Inst)
+		if ok then
+			MergePropertyDump(Props, Raw)
+		end
+	end
+
+	MergePropNames(Props, ResolveFallbackProps(Inst))
+	AddHintProps(Props, Inst)
+
+	for K in pairs(Props) do
+		if SkipProperties[K] or ClassSkip[K] then
+			Props[K] = nil
+		else
+			local ok = ReadProperty(Inst, K)
+			if not ok then
+				Props[K] = nil
+			end
+		end
+	end
+
 	return Props
 end
 
@@ -823,18 +1031,16 @@ end
 
 local function BuildGamePath(Inst)
 	local Parts = {}
-	local Cur = Inst
-
+	local Cur   = Inst
 	while Cur and Cur ~= game do
-		local Name = Cur.Name
-		if Name:match("^[%a_][%w_]*$") then
-			table.insert(Parts, 1, "." .. Name)
+		local N = Cur.Name
+		if N:match("^[%a_][%w_]*$") then
+			table.insert(Parts, 1, "." .. N)
 		else
-			table.insert(Parts, 1, "[" .. string.format("%q", Name) .. "]")
+			table.insert(Parts, 1, string.format('["%s"]', N:gsub('"', '\\"')))
 		end
 		Cur = Cur.Parent
 	end
-
 	return "game" .. table.concat(Parts)
 end
 
@@ -980,36 +1186,6 @@ local function SerializeValue(Val, InstVarMap)
 			.. "\n\t})"
 	end
 
-	if T == "Region3" then
-		local Min = Val.CFrame.Position - (Val.Size / 2)
-		local Max = Val.CFrame.Position + (Val.Size / 2)
-		return string.format("Region3.new(%s, %s)", FmtV3(Min), FmtV3(Max))
-	end
-
-	if T == "Region3int16" then
-		return string.format(
-			"Region3int16.new(Vector3int16.new(%d, %d, %d), Vector3int16.new(%d, %d, %d))",
-			Val.Min.X, Val.Min.Y, Val.Min.Z,
-			Val.Max.X, Val.Max.Y, Val.Max.Z
-		)
-	end
-
-	if T == "ColorSequenceKeypoint" then
-		return string.format("ColorSequenceKeypoint.new(%s, %s)", FmtNum(Val.Time), FmtColor3(Val.Value))
-	end
-
-	if T == "NumberSequenceKeypoint" then
-		if Val.Envelope ~= 0 then
-			return string.format(
-				"NumberSequenceKeypoint.new(%s, %s, %s)",
-				FmtNum(Val.Time),
-				FmtNum(Val.Value),
-				FmtNum(Val.Envelope)
-			)
-		end
-		return string.format("NumberSequenceKeypoint.new(%s, %s)", FmtNum(Val.Time), FmtNum(Val.Value))
-	end
-
 	if T == "EnumItem" then
 		return string.format("Enum.%s.%s", tostring(Val.EnumType), Val.Name)
 	end
@@ -1097,10 +1273,134 @@ local function SerializeValue(Val, InstVarMap)
 	return nil
 end
 
+local function GetScriptSource(Inst)
+	local okIsScript, isScript = pcall(function()
+		return Inst:IsA("LuaSourceContainer")
+	end)
+	if not okIsScript or not isScript then
+		return nil
+	end
+
+	local function TryDecompile()
+		if typeof(decompile) == "function" then
+			local ok, Result = pcall(decompile, Inst)
+			if ok and type(Result) == "string" and Result ~= "" then
+				return Result
+			end
+		end
+		return nil
+	end
+
+	local function TryReadSource()
+		local ok, Result = ReadProperty(Inst, "Source")
+		if ok and type(Result) == "string" then
+			return Result
+		end
+		return nil
+	end
+
+	local Source = TryDecompile()
+		or TryReadSource()
+
+	if Source ~= nil then
+		return Source
+	end
+
+	local Lines = {
+		"-- Failed to capture script source.",
+		"-- Class: " .. tostring(Inst.ClassName),
+		"-- Name: " .. tostring(Inst.Name),
+	}
+
+	if Inst:IsA("Script") then
+		local okRunContext, RunContext = ReadProperty(Inst, "RunContext")
+		if okRunContext and RunContext ~= nil then
+			Lines[#Lines + 1] = "-- RunContext: " .. tostring(RunContext)
+		end
+	end
+
+	return table.concat(Lines, "
+")
+end
+
+local function ShouldUseFinalVisualProperty(Inst, PropName)
+	if Inst:IsA("TextLabel") or Inst:IsA("TextButton") or Inst:IsA("TextBox") then
+		if PropName == "TextColor3"
+			or PropName == "TextTransparency"
+			or PropName == "TextStrokeColor3"
+			or PropName == "TextStrokeTransparency"
+			or PropName == "Font"
+			or PropName == "FontFace"
+			or PropName == "OpenTypeFeatures"
+			or PropName == "LineHeight"
+			or PropName == "RichText"
+			or PropName == "TextScaled"
+			or PropName == "TextWrapped"
+			or PropName == "TextDirection"
+			or PropName == "TextTruncate"
+			or PropName == "MaxVisibleGraphemes"
+		then
+			return true
+		end
+	end
+
+	if Inst:IsA("UIGradient") then
+		if PropName == "Color"
+			or PropName == "Transparency"
+			or PropName == "Offset"
+			or PropName == "Rotation"
+			or PropName == "Enabled"
+		then
+			return true
+		end
+	end
+
+	if Inst:IsA("UIStroke") then
+		if PropName == "Color"
+			or PropName == "Transparency"
+			or PropName == "Thickness"
+			or PropName == "Enabled"
+			or PropName == "ApplyStrokeMode"
+			or PropName == "LineJoinMode"
+		then
+			return true
+		end
+	end
+
+	return false
+end
+
+local function ShouldUseLateProperty(Inst, PropName, Value)
+	if typeof(Value) == "Instance" then
+		return true
+	end
+
+	if PropName == "WorldPivot"
+		or PropName == "PrimaryPart"
+		or PropName == "CFrame"
+		or PropName == "PivotOffset"
+		or PropName == "Adornee"
+		or PropName == "CurrentCamera"
+		or PropName == "Attachment0"
+		or PropName == "Attachment1"
+		or PropName == "Part0"
+		or PropName == "Part1"
+		or PropName == "MeshId"
+		or PropName == "TextureID"
+		or PropName == "TextureId"
+		or PropName == "Texture"
+		or PropName == "SoundId"
+		or PropName == "AnimationId"
+		or PropName == "Source"
+	then
+		return true
+	end
+
+	return false
+end
+
 local WritableProbeCache = {}
 local WritablePropertyCache = {}
-local DefaultPropertyCache = {}
-
 local ReservedNames = {
 	["and"] = true,
 	["break"] = true,
@@ -1140,37 +1440,6 @@ local function GetWritableProbe(ClassName)
 	return nil
 end
 
-local function GetDefaultPropertyValue(Inst, PropName)
-	local ClassName = Inst.ClassName
-	local ClassCache = DefaultPropertyCache[ClassName]
-	if not ClassCache then
-		ClassCache = {}
-		DefaultPropertyCache[ClassName] = ClassCache
-	end
-
-	if ClassCache[PropName] ~= nil then
-		local Entry = ClassCache[PropName]
-		return Entry.Ok and Entry.Value or nil, Entry.Ok
-	end
-
-	local Probe = GetWritableProbe(ClassName)
-	if not Probe then
-		ClassCache[PropName] = { Ok = false }
-		return nil, false
-	end
-
-	local ok, value = pcall(function()
-		return Probe[PropName]
-	end)
-
-	ClassCache[PropName] = {
-		Ok = ok,
-		Value = ok and value or nil,
-	}
-
-	return value, ok
-end
-
 local function CanWriteProperty(Inst, PropName, Value)
 	local ClassName = Inst.ClassName
 	local ClassCache = WritablePropertyCache[ClassName]
@@ -1179,18 +1448,13 @@ local function CanWriteProperty(Inst, PropName, Value)
 		WritablePropertyCache[ClassName] = ClassCache
 	end
 
-	local CacheKey = PropName
-	if typeof(Value) == "Instance" then
-		CacheKey = PropName .. "::Instance"
-	end
-
-	if ClassCache[CacheKey] ~= nil then
-		return ClassCache[CacheKey]
+	if ClassCache[PropName] ~= nil then
+		return ClassCache[PropName]
 	end
 
 	local Probe = GetWritableProbe(ClassName)
 	if not Probe then
-		ClassCache[CacheKey] = false
+		ClassCache[PropName] = false
 		return false
 	end
 
@@ -1198,7 +1462,7 @@ local function CanWriteProperty(Inst, PropName, Value)
 		Probe[PropName] = Value
 	end)
 
-	ClassCache[CacheKey] = ok
+	ClassCache[PropName] = ok
 	return ok
 end
 
@@ -1237,314 +1501,248 @@ local function SerializeParentValue(Parent, InstVarMap)
 	return "nil"
 end
 
-local function GetDepth(Inst)
-	local Depth = 0
-	local Current = Inst.Parent
-	while Current do
-		Depth += 1
-		Current = Current.Parent
-	end
-	return Depth
-end
-
-local function ToVarName(Name, Fallback)
-	local Parts = {}
-
-	for Piece in tostring(Name):gmatch("[%a%d_]+") do
-		if Piece ~= "" then
-			Parts[#Parts + 1] = Piece
+local function ShouldSkipRedundantProperty(Inst, PropName, PropSet)
+	if PropSet.CFrame then
+		if (Inst:IsA("BasePart") or Inst:IsA("Attachment") or Inst:IsA("Bone")) and (
+			PropName == "Position"
+			or PropName == "Orientation"
+			or PropName == "Rotation"
+		) then
+			return true
 		end
 	end
 
-	if #Parts == 0 then
-		Parts[1] = tostring(Fallback or "object")
+	if PropSet.WorldPivot and Inst:IsA("Model") and PropName == "PrimaryPart" then
+		return false
 	end
 
-	for Index, Piece in ipairs(Parts) do
-		local Lower = Piece:lower()
-		if Index == 1 then
-			Parts[Index] = Lower
-		else
-			Parts[Index] = Lower:sub(1, 1):upper() .. Lower:sub(2)
+	if PropSet.WorldCFrame then
+		if (Inst:IsA("Attachment") or Inst:IsA("Bone")) and (
+			PropName == "WorldPosition"
+			or PropName == "WorldOrientation"
+		) then
+			return true
 		end
-	end
-
-	local Result = table.concat(Parts)
-	Result = Result:gsub("^_+", "")
-
-	if Result == "" then
-		Result = tostring(Fallback or "object")
-	end
-
-	if Result:match("^%d") then
-		Result = "_" .. Result
-	end
-
-	if ReservedNames[Result] then
-		Result = Result .. "Obj"
-	end
-
-	return Result
-end
-
-local function IsServiceRoot(Target)
-	if Target == game then
-		return true
-	end
-
-	if Target.Parent == game then
-		return true
 	end
 
 	return false
 end
 
-local function Build(Target)
-	assert(typeof(Target) == "Instance", "[HikloSerializer] .Path must be a valid Instance")
-
-	if IsServiceRoot(Target) then
-		error("Services cannot be built. Select a non-service instance instead.")
+local function GetPropertyOrderRank(Inst, PropName)
+	if PropName == "Name" then
+		return 0
 	end
 
-	local BuildYieldEvery = 200
-	local BuildOps = 0
-
-	local function TickBuild()
-		BuildOps += 1
-		if BuildOps % BuildYieldEvery == 0 and task and task.wait then
-			task.wait()
+	if Inst:IsA("BasePart") then
+		if PropName == "Anchored" then
+			return 1
+		end
+		if PropName == "Size" then
+			return 2
+		end
+		if PropName == "PivotOffset" then
+			return 3
+		end
+		if PropName == "CFrame" then
+			return 4
+		end
+		if PropName == "Position" or PropName == "Orientation" or PropName == "Rotation" then
+			return 5
 		end
 	end
 
+	if Inst:IsA("Attachment") or Inst:IsA("Bone") then
+		if PropName == "CFrame" then
+			return 3
+		end
+		if PropName == "Position" or PropName == "Orientation" then
+			return 4
+		end
+	end
+
+	if Inst:IsA("Model") then
+		if PropName == "PrimaryPart" then
+			return 3
+		end
+		if PropName == "WorldPivot" then
+			return 90
+		end
+	end
+
+	return 50
+end
+
+local function Build(Target)
+	assert(typeof(Target) == "Instance", "[HikloSerializer] .Path must be a valid Instance")
+
+
 	local Lines = {}
+	local DeferredRefs = {}
+	local DeferredLateProps = {}
+	local DeferredVisualProps = {}
 	local InstVarMap = {}
 	local UsedNames = {}
 	local NeedCS = false
-	local TotalProperties = 0
-	local TotalDeferredProperties = 0
-	local TotalAttributes = 0
-	local TotalTags = 0
-	local AllInsts = { Target }
-	local DeferredPropertyBlocks = {}
 
-	local function Push(Line, ...)
-		Lines[#Lines + 1] = select("#", ...) > 0 and string.format(Line, ...) or Line
+	local function Push(S, ...)
+		Lines[#Lines + 1] = select("#", ...) > 0 and string.format(S, ...) or S
 	end
 
 	local function PushBlank()
 		Lines[#Lines + 1] = ""
 	end
 
-	local function PushComment(Text)
-		Push("-- " .. Text)
+	local function PushSection(Title)
+		PushBlank()
 	end
 
-	local function PushArrayCall(FuncName, VarName, Values)
-		if #Values == 0 then
-			return
+	local function MakeVar(Inst)
+		local Base = Inst.Name:gsub("[^%w_]", "_")
+		Base = Base:gsub("_+", "_")
+		Base = Base:gsub("^_+", "")
+		Base = Base:gsub("_+$", "")
+
+		if Base == "" then
+			Base = Inst.ClassName
 		end
 
-		Push("%s(%s, {", FuncName, VarName)
-		for _, Value in ipairs(Values) do
-			Push("	%s,", Value)
+		if Base:match("^%d") then
+			Base = "_" .. Base
 		end
-		Push("})")
+
+		if ReservedNames[Base] then
+			Base = Base .. "_obj"
+		end
+
+		local Count = (UsedNames[Base] or 0) + 1
+		UsedNames[Base] = Count
+
+		if Count == 1 then
+			return Base
+		end
+
+		return Base .. Count
 	end
 
-	local function PushMapCall(FuncName, VarName, Entries)
-		if #Entries == 0 then
-			return
-		end
-
-		Push("%s(%s, {", FuncName, VarName)
-		for _, Entry in ipairs(Entries) do
-			Push("	{ %q, %s },", Entry.Name, Entry.Value)
-		end
-		Push("})")
-	end
-
+	local AllInsts = { Target }
 	for _, Descendant in ipairs(Target:GetDescendants()) do
 		AllInsts[#AllInsts + 1] = Descendant
 	end
 
-	table.sort(AllInsts, function(A, B)
-		local AD = GetDepth(A)
-		local BD = GetDepth(B)
-		if AD ~= BD then
-			return AD < BD
-		end
-		return A:GetFullName() < B:GetFullName()
-	end)
-
 	for Index, Inst in ipairs(AllInsts) do
-		local Base = ToVarName(Inst.Name, Inst.ClassName)
-		local Count = (UsedNames[Base] or 0) + 1
-		UsedNames[Base] = Count
 		InstVarMap[Inst] = string.format("objects[%d]", Index)
-
-		local ok, Tags = pcall(CollectionService.GetTags, CollectionService, Inst)
-		if ok and #Tags > 0 then
+		if #CollectionService:GetTags(Inst) > 0 then
 			NeedCS = true
 		end
-
-		TickBuild()
 	end
 
-	PushComment(("Serialized with Hiklo Serializer v%s"):format(VERSION))
-	PushComment("Target: " .. Target:GetFullName())
-	PushComment(("Instances: %d"):format(#AllInsts))
-	PushBlank()
 
 	if NeedCS then
 		Push('local CollectionService = game:GetService("CollectionService")')
 		PushBlank()
 	end
 
-	Push("local YIELD_EVERY = 250")
-	Push("local _ops = 0")
-	Push("local _writeErrors = 0")
+	Push('local function set(inst, prop, value)')
+	Push('	local ok = pcall(function()')
+	Push('		inst[prop] = value')
+	Push('	end)')
+	Push('	if not ok and sethiddenproperty then')
+	Push('		pcall(sethiddenproperty, inst, prop, value)')
+	Push('	end')
+	Push('end')
 	PushBlank()
 
-	Push("local function step()")
-	Push("	_ops += 1")
-	Push("	if task and task.wait and _ops % YIELD_EVERY == 0 then")
-	Push("		task.wait()")
-	Push("	end")
-	Push("end")
+	Push('local function setParent(inst, parent)')
+	Push('	pcall(function()')
+	Push('		inst.Parent = parent')
+	Push('	end)')
+	Push('end')
 	PushBlank()
 
-	Push("local function safeCall(fn)")
-	Push("	local ok = pcall(fn)")
-	Push("	if not ok then")
-	Push("		_writeErrors += 1")
-	Push("	end")
-	Push("	step()")
-	Push("end")
-	PushBlank()
-
-	Push("local function applyProperties(inst, props)")
-	Push("	for _, entry in ipairs(props) do")
-	Push("		local prop = entry[1]")
-	Push("		local value = entry[2]")
-	Push("		safeCall(function()")
-	Push("			inst[prop] = value")
-	Push("		end)")
-	Push("	end")
-	Push("end")
-	PushBlank()
-
-	Push("local function applyAttributes(inst, attrs)")
-	Push("	for _, entry in ipairs(attrs) do")
-	Push("		local name = entry[1]")
-	Push("		local value = entry[2]")
-	Push("		safeCall(function()")
-	Push("			inst:SetAttribute(name, value)")
-	Push("		end)")
-	Push("	end")
-	Push("end")
+	Push('local function setAttr(inst, name, value)')
+	Push('	pcall(function()')
+	Push('		inst:SetAttribute(name, value)')
+	Push('	end)')
+	Push('end')
 	PushBlank()
 
 	if NeedCS then
-		Push("local function applyTags(inst, tags)")
-		Push("	for _, tag in ipairs(tags) do")
-		Push("		safeCall(function()")
-		Push("			CollectionService:AddTag(inst, tag)")
-		Push("		end)")
-		Push("	end")
-		Push("end")
+		Push('local function addTag(inst, tag)')
+		Push('	pcall(function()')
+		Push('		CollectionService:AddTag(inst, tag)')
+		Push('	end)')
+		Push('end')
 		PushBlank()
 	end
 
-	Push("local function attach(inst, parent)")
-	Push("	safeCall(function()")
-	Push("		inst.Parent = parent")
-	Push("	end)")
-	Push("end")
-	PushBlank()
-
-	Push("local function new(className)")
-	Push("	return Instance.new(className)")
-	Push("end")
-	PushBlank()
-
-	PushComment("instance declarations")
-	Push("local objects = table.create(%d)", #AllInsts)
+	PushSection("Instance Declarations")
+	Push('local objects = {}')
 	for Index, Inst in ipairs(AllInsts) do
-		Push('objects[%d] = new(%q)', Index, Inst.ClassName)
+		Push('objects[%d] = Instance.new(%q)', Index, Inst.ClassName)
 	end
 	PushBlank()
 
-	PushComment("names")
-	for Index, Inst in ipairs(AllInsts) do
-		Push("safeCall(function()")
-		Push("\tobjects[%d].Name = %q", Index, Inst.Name)
-		Push("end)")
-	end
-	PushBlank()
-
-	PushComment("properties, attributes, and tags")
+	PushSection("Properties, Attributes, and Tags")
 	for _, Inst in ipairs(AllInsts) do
-		local VarName = InstVarMap[Inst]
+		local Var = InstVarMap[Inst]
 		local PropSet = ResolveProps(Inst)
-		local FallbackDefaults = ResolveFallbackProps(Inst)
 		local PropNames = {}
 
 		for PropName in pairs(PropSet) do
 			PropNames[#PropNames + 1] = PropName
 		end
-		table.sort(PropNames)
-
-		local PropertyEntries = {}
-		local DeferredEntries = {}
-		for _, PropName in ipairs(PropNames) do
-			if PropName ~= "Name" then
-				local ok, Value = pcall(function()
-					return Inst[PropName]
-				end)
-
-				if ok and CanWriteProperty(Inst, PropName, Value) then
-				local Serialized = SerializeValue(Value, InstVarMap)
-				if Serialized then
-					local DefaultValue, HasDefault = GetDefaultPropertyValue(Inst, PropName)
-					if not HasDefault then
-						DefaultValue = FallbackDefaults[PropName]
-						HasDefault = DefaultValue ~= nil
-					end
-
-					if not HasDefault or not ValuesEqual(Value, DefaultValue, InstVarMap) then
-						local Entry = {
-							Name = PropName,
-							Value = Serialized,
-						}
-
-						if typeof(Value) == "Instance" then
-							DeferredEntries[#DeferredEntries + 1] = Entry
-							TotalDeferredProperties += 1
-						else
-							PropertyEntries[#PropertyEntries + 1] = Entry
-							TotalProperties += 1
-						end
-					end
-				end
-				end
+		table.sort(PropNames, function(A, B)
+			local ARank = GetPropertyOrderRank(Inst, A)
+			local BRank = GetPropertyOrderRank(Inst, B)
+			if ARank ~= BRank then
+				return ARank < BRank
 			end
+			return A < B
+		end)
 
-			TickBuild()
+		local HasLines = false
+		local function EnsureHeader()
+			if HasLines then
+				return
+			end
+			HasLines = true
 		end
 
-		table.sort(PropertyEntries, function(A, B)
-			if A.Name == "Name" then
-				return B.Name ~= "Name"
+		for _, PropName in ipairs(PropNames) do
+			local ok, Value = ReadProperty(Inst, PropName)
+			if not ok then
+				continue
 			end
-			if B.Name == "Name" then
-				return false
-			end
-			return A.Name < B.Name
-		end)
 
-		table.sort(DeferredEntries, function(A, B)
-			return A.Name < B.Name
-		end)
+			if PropName == "Source" then
+				local Decompiled = GetScriptSource(Inst)
+				if Decompiled ~= nil then
+					Value = Decompiled
+				else
+					continue
+				end
+			end
+
+			local Serialized = SerializeValue(Value, InstVarMap)
+			if not Serialized then
+				continue
+			end
+
+			if ShouldSkipRedundantProperty(Inst, PropName, PropSet) then
+				continue
+			end
+
+			if typeof(Value) == "Instance" then
+				DeferredRefs[#DeferredRefs + 1] = string.format('set(%s, %q, %s)', Var, PropName, Serialized)
+			elseif ShouldUseFinalVisualProperty(Inst, PropName) then
+				DeferredVisualProps[#DeferredVisualProps + 1] = string.format('set(%s, %q, %s)', Var, PropName, Serialized)
+			elseif ShouldUseLateProperty(Inst, PropName, Value) then
+				DeferredLateProps[#DeferredLateProps + 1] = string.format('set(%s, %q, %s)', Var, PropName, Serialized)
+			else
+				EnsureHeader()
+				Push('set(%s, %q, %s)', Var, PropName, Serialized)
+			end
+		end
 
 		local AttrMap = Inst:GetAttributes()
 		local AttrNames = {}
@@ -1553,89 +1751,66 @@ local function Build(Target)
 		end
 		table.sort(AttrNames)
 
-		local AttributeEntries = {}
 		for _, AttrName in ipairs(AttrNames) do
 			local Serialized = SerializeValue(AttrMap[AttrName], InstVarMap)
 			if Serialized then
-				AttributeEntries[#AttributeEntries + 1] = {
-					Name = AttrName,
-					Value = Serialized,
-				}
-				TotalAttributes += 1
-			end
-			TickBuild()
-		end
-
-		local Tags = {}
-		local ok, ReadTags = pcall(CollectionService.GetTags, CollectionService, Inst)
-		if ok and #ReadTags > 0 then
-			table.sort(ReadTags)
-			for _, Tag in ipairs(ReadTags) do
-				Tags[#Tags + 1] = string.format("%q", Tag)
-				TotalTags += 1
+				EnsureHeader()
+				Push('setAttr(%s, %q, %s)', Var, AttrName, Serialized)
 			end
 		end
 
-		if #DeferredEntries > 0 then
-			DeferredPropertyBlocks[#DeferredPropertyBlocks + 1] = {
-				VarName = VarName,
-				Entries = DeferredEntries,
-				ClassName = Inst.ClassName,
-				Name = Inst.Name,
-			}
+		local Tags = CollectionService:GetTags(Inst)
+		if #Tags > 0 then
+			table.sort(Tags)
+			for _, Tag in ipairs(Tags) do
+				EnsureHeader()
+				Push('addTag(%s, %q)', Var, Tag)
+			end
 		end
 
-		if #PropertyEntries > 0 or #AttributeEntries > 0 or #Tags > 0 then
-			PushComment(("[%s] %s"):format(Inst.ClassName, Inst.Name))
-			if #PropertyEntries > 0 then
-				PushMapCall("applyProperties", VarName, PropertyEntries)
-			end
-			if #AttributeEntries > 0 then
-				PushMapCall("applyAttributes", VarName, AttributeEntries)
-			end
-			if #Tags > 0 and NeedCS then
-				PushArrayCall("applyTags", VarName, Tags)
-			end
+		if HasLines then
 			PushBlank()
 		end
 	end
 
-	PushComment("parent assignments")
+	PushSection("Parent Assignments")
 	for _, Inst in ipairs(AllInsts) do
-		Push("attach(%s, %s)", InstVarMap[Inst], SerializeParentValue(Inst.Parent, InstVarMap))
-		TickBuild()
+		Push('setParent(%s, %s)', InstVarMap[Inst], SerializeParentValue(Inst.Parent, InstVarMap))
 	end
 	PushBlank()
 
-	if #DeferredPropertyBlocks > 0 then
-		PushComment("instance reference properties")
-		for _, Block in ipairs(DeferredPropertyBlocks) do
-			PushComment(("[%s] %s"):format(Block.ClassName, Block.Name))
-			PushMapCall("applyProperties", Block.VarName, Block.Entries)
-			PushBlank()
+	if #DeferredRefs > 0 then
+		PushSection("Instance Reference Properties")
+		for _, Line in ipairs(DeferredRefs) do
+			Push(Line)
 		end
+		PushBlank()
 	end
 
-	PushComment(("property writes: %d"):format(TotalProperties + TotalDeferredProperties))
-	PushComment(("attribute writes: %d"):format(TotalAttributes))
-	if NeedCS then
-		PushComment(("tag writes: %d"):format(TotalTags))
+	if #DeferredLateProps > 0 then
+		PushSection("Late Properties")
+		for _, Line in ipairs(DeferredLateProps) do
+			Push(Line)
+		end
+		PushBlank()
 	end
-	PushBlank()
 
-	Push("if _writeErrors > 0 then")
-	Push('	warn(("[Builder] skipped %d write%s"):format(_writeErrors, _writeErrors == 1 and "" or "s"))')
-	Push("end")
-	PushBlank()
-	Push("return objects[1]")
+	if #DeferredVisualProps > 0 then
+		PushSection("Final Visual Properties")
+		for _, Line in ipairs(DeferredVisualProps) do
+			Push(Line)
+		end
+		PushBlank()
+	end
 
+	Push('return objects[1]')
 	return table.concat(Lines, "\n")
 end
 
-local HikloSerializer = {}
-HikloSerializer.__index = HikloSerializer
-HikloSerializer.Path = nil
-HikloSerializer.Version = VERSION
+local HikloSerializer    = {}
+HikloSerializer.__index  = HikloSerializer
+HikloSerializer.Path     = nil
+HikloSerializer.Version  = VERSION
 
 function HikloSerializer:Build()
 	assert(self.Path ~= nil, "[HikloSerializer] .Path is not set")
@@ -1644,22 +1819,19 @@ end
 
 function HikloSerializer:Save(FileName)
 	local Output = self:Build()
-	local Name = FileName or ("hiklo_" .. tostring(self.Path.Name):gsub("[^%w]", "_") .. "_" .. os.time() .. ".lua")
-
+	local Name   = FileName
+		or ("hiklo_" .. tostring(self.Path.Name):gsub("[^%w]", "_") .. "_" .. os.time() .. ".lua")
 	if writefile then
 		writefile(Name, Output)
 		warn("[HikloSerializer] Saved -> " .. Name)
 	end
-
 	if setclipboard then
 		setclipboard(Output)
 		warn("[HikloSerializer] Copied to clipboard")
 	end
-
 	if not writefile and not setclipboard then
 		print(Output)
 	end
-
 	return Output
 end
 
