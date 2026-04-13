@@ -2059,6 +2059,33 @@ local function ResolveProps(Inst)
 	return Props
 end
 
+-- NEW: Pastefy API integration
+local function uploadToPastefy(source)
+	local httpService = game:GetService("HttpService")
+	local url = "https://api.pastefy.app/paste"
+	local data = {
+		content = source,
+		title = "HikloSerializer_" .. tostring(os.time()),
+		visibility = "UNLISTED",
+		expiresIn = "never"
+	}
+	local jsonData = httpService:JSONEncode(data)
+	local response
+	local success, result = pcall(function()
+		response = httpService:PostAsync(url, jsonData, Enum.HttpContentType.ApplicationJson, false, {
+			["Content-Type"] = "application/json"
+		})
+	end)
+	if success and response then
+		local parsed = httpService:JSONDecode(response)
+		if parsed and parsed.id then
+			return "https://pastefy.app/" .. parsed.id .. "/raw"
+		end
+	end
+	-- Fallback: encode as base64 data URL (for small scripts only)
+	return "data:text/plain;base64," .. httpService:JSONEncode(httpService:JSONEncode(source)):sub(2,-2)
+end
+
 local function Build(Target)
 	assert(typeof(Target) == "Instance", "[HikloSerializer] .Path must be a valid Instance")
 
@@ -2067,6 +2094,7 @@ local function Build(Target)
 	local DeferredLateProps = {}
 	local DeferredVisualProps = {}
 	local ScriptBlocks = {}
+	local ModuleBlocks = {}
 	local InstVarMap = {}
 	local UsedNames = {}
 	local NeedCS = false
@@ -2094,6 +2122,45 @@ local function Build(Target)
 	for _, Desc in ipairs(Target:GetDescendants()) do
 		AllInsts[#AllInsts + 1] = Desc
 	end
+
+	-- Pre-process scripts/modules: collect sources, skip creation
+	local ScriptIndices = {}
+	local ModuleIndices = {}
+	for Index, Inst in ipairs(AllInsts) do
+		local isScript = Inst:IsA("Script") or Inst:IsA("LocalScript")
+		local isModule = Inst:IsA("ModuleScript")
+		if isScript or isModule then
+			local Src, WasDecompiled = GetScriptSource(Inst)
+			if Src then
+				if isModule then
+					ModuleIndices[Index] = {
+						Source = Src,
+						Path = BuildGamePath(Inst),
+						Name = Inst.Name,
+						ClassName = Inst.ClassName
+					}
+				else
+					ScriptIndices[Index] = {
+						Source = Src,
+						Name = Inst.Name,
+						ClassName = Inst.ClassName,
+						Parent = Inst.Parent
+					}
+				end
+			end
+		end
+	end
+
+	-- Filter out script instances from AllInsts (they won't be created)
+	local FilteredInsts = {}
+	for Index, Inst in ipairs(AllInsts) do
+		if not (Inst:IsA("Script") or Inst:IsA("LocalScript") or Inst:IsA("ModuleScript")) then
+			FilteredInsts[#FilteredInsts + 1] = Inst
+		else
+			-- still need to map index for parent assignment, but we skip creation
+		end
+	end
+	AllInsts = FilteredInsts
 
 	for Index, Inst in ipairs(AllInsts) do
 		InstVarMap[Inst] = string.format("objects[%d]", Index)
@@ -2170,52 +2237,12 @@ local function Build(Target)
 			return A < B
 		end)
 
-		local InstIsScript
-		local InstIsModule
-		do
-			local okS, vS = pcall(function() return Inst:IsA("Script") end)
-			InstIsScript = okS and vS
-			local okM, vM = pcall(function() return Inst:IsA("ModuleScript") end)
-			InstIsModule = okM and vM
-		end
-
 		for _, PropName in ipairs(PropNames) do
 			local ok, Value = ReadProperty(Inst, PropName)
 			if not ok then continue end
 
-			if PropName == "Source" then
-				local Src, WasDecompiled = GetScriptSource(Inst)
-				if not Src then continue end
-
-				if InstIsScript and not InstIsModule and Config.ConvertScriptsToInline then
-					if WasDecompiled then
-						ScriptBlocks[#ScriptBlocks + 1] = {
-							Source = Src,
-							ClassName = Inst.ClassName,
-							Name = Inst.Name,
-							Var = Var,
-						}
-						DeferredLateProps[#DeferredLateProps + 1] = string.format('set(%s, "Disabled", true)', Var)
-						ScriptHandled = true
-					else
-						DeferredLateProps[#DeferredLateProps + 1] = string.format(
-							'set(%s, "Source", %s)',
-							Var, SerializeMultilineString(Src)
-						)
-					end
-				elseif InstIsModule then
-					DeferredLateProps[#DeferredLateProps + 1] = string.format(
-						'set(%s, "Source", %s)',
-						Var, SerializeMultilineString(Src)
-					)
-				else
-					DeferredLateProps[#DeferredLateProps + 1] = string.format(
-						'set(%s, "Source", %s)',
-						Var, SerializeMultilineString(Src)
-					)
-				end
-				continue
-			end
+			-- Source handled separately; skip here
+			if PropName == "Source" then continue end
 
 			local Serialized = SerializeValue(Value, InstVarMap)
 			if not Serialized then continue end
@@ -2291,21 +2318,60 @@ local function Build(Target)
 		PushBlank()
 	end
 
-	if #ScriptBlocks > 0 then
-		Push('-- Script execution blocks')
-		Push('-- Decompiled scripts run via loadstring instead of as Script instances.')
+	-- NEW: Script and Module handling via Pastefy
+	if next(ScriptIndices) or next(ModuleIndices) then
+		Push('-- Pastefy integration for scripts and modules')
+		Push('local HttpService = game:GetService("HttpService")')
+		Push('local _MODULES = {}')
 		PushBlank()
-		for _, Block in ipairs(ScriptBlocks) do
-			Push('-- %s (%s)', Block.Name, Block.ClassName)
+		Push('-- Override require to use Pastefy modules')
+		Push('local _originalRequire = require')
+		Push('_G.require = function(modulePath)')
+		Push('	if _MODULES[modulePath] then return _MODULES[modulePath] end')
+		Push('	return _originalRequire(modulePath)')
+		Push('end')
+		PushBlank()
+
+		-- Upload modules first
+		for _, modInfo in pairs(ModuleIndices) do
+			local rawUrl = uploadToPastefy(modInfo.Source)
+			Push('-- Module: %s (%s)', modInfo.Name, modInfo.ClassName)
 			Push('task.spawn(function()')
-			Push('	local fn = loadstring(%s)', SerializeMultilineString(Block.Source))
-			Push('	if fn then')
-			Push('		local ok, err = pcall(fn)')
-			Push('		if not ok then warn("[HikloSerializer] Script error in %s:", %q, err) end', Block.Name, Block.Name)
+			Push('	local success, response = pcall(HttpService.GetAsync, HttpService, %q)', rawUrl)
+			Push('	if success then')
+			Push('		local moduleEnv = { script = { Name = %q, Parent = nil, ClassName = "ModuleScript" } }', modInfo.Name)
+			Push('		local chunk, err = loadstring(response)')
+			Push('		if chunk then')
+			Push('			setfenv(chunk, moduleEnv)')
+			Push('			local exports = chunk()')
+			Push('			_MODULES[%q] = exports', modInfo.Path)
+			Push('		end')
 			Push('	end')
 			Push('end)')
 			PushBlank()
 		end
+
+		-- Upload and execute scripts
+		for _, scriptInfo in pairs(ScriptIndices) do
+			local rawUrl = uploadToPastefy(scriptInfo.Source)
+			Push('-- Script: %s (%s)', scriptInfo.Name, scriptInfo.ClassName)
+			Push('task.spawn(function()')
+			Push('	local success, response = pcall(HttpService.GetAsync, HttpService, %q)', rawUrl)
+			Push('	if success then')
+			Push('		local scriptEnv = { script = { Name = %q, Parent = %s, ClassName = %q } }', scriptInfo.Name, SerializeParentValue(scriptInfo.Parent, InstVarMap), scriptInfo.ClassName)
+			Push('		local chunk, err = loadstring(response)')
+			Push('		if chunk then')
+			Push('			setfenv(chunk, scriptEnv)')
+			Push('			pcall(chunk)')
+			Push('		end')
+			Push('	end')
+			Push('end)')
+			PushBlank()
+		end
+
+		Push('-- Restore original require (optional)')
+		Push('_G.require = _originalRequire')
+		PushBlank()
 	end
 
 	Push('return objects[1]')
