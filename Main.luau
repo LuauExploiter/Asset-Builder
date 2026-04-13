@@ -285,7 +285,7 @@ FallbackProperties["Shirt"] = { ShirtTemplate = "" }
 FallbackProperties["ShirtGraphic"] = { Color3 = Color3.new(1, 1, 1), Graphic = "" }
 
 FallbackProperties["WrapLayer"] = {
-	AutoSkin = Enum.WrapLayerAutoSkin.Disabled,
+	AutoSkin = Enum.AutoSkin.Disabled,
 	BindOffset = CFrame.new(),
 	Color = BrickColor.new("Bright blue"),
 	DebugHeatmap = false,
