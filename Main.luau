@@ -190,7 +190,7 @@ FallbackProperties["Pants"]       = { PantsTemplate = "" }
 FallbackProperties["Shirt"]       = { ShirtTemplate = "" }
 FallbackProperties["ShirtGraphic"] = { Color3 = Color3.new(1, 1, 1), Graphic = "" }
 FallbackProperties["WrapLayer"] = {
-	AutoSkin = Enum.WrapLayerAutoSkin.NearestNeighbors, BindOffset = CFrame.new(),
+	AutoSkin = Enum.WrapLayerAutoSkin.NearestNeighbor, BindOffset = CFrame.new(),
 	Color = BrickColor.new("Bright blue"), DebugHeatmap = false, Enabled = true,
 	InflateDelta = 0, Order = 0, Puffiness = 0, ReferenceMeshId = "",
 	ReferenceOrigin = CFrame.new(), ShrinkDelta = 0,
