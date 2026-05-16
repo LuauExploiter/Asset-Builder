@@ -190,7 +190,7 @@ FallbackProperties["Pants"]       = { PantsTemplate = "" }
 FallbackProperties["Shirt"]       = { ShirtTemplate = "" }
 FallbackProperties["ShirtGraphic"] = { Color3 = Color3.new(1, 1, 1), Graphic = "" }
 FallbackProperties["WrapLayer"] = {
-	AutoSkin = Enum.WrapLayerAutoSkin.Disabled, BindOffset = CFrame.new(),
+	AutoSkin = Enum.WrapLayerAutoSkin.Default, BindOffset = CFrame.new(),
 	Color = BrickColor.new("Bright blue"), DebugHeatmap = false, Enabled = true,
 	InflateDelta = 0, Order = 0, Puffiness = 0, ReferenceMeshId = "",
 	ReferenceOrigin = CFrame.new(), ShrinkDelta = 0,
@@ -1957,7 +1957,7 @@ local function Build(Target)
 				Push("pcall(function()")
 				Push("\t-- Signal: %s", Conn.signal)
 				Push("\tlocal _hSrc = %s", SerializeMultilineString(Conn.source))
-				Push('\tlocal _hFn, _hErr = loadstring("return " .. _hSrc:match("^%s*(.-)%s*$"), "@conn_%s_%s")', Block.Name, Conn.signal)
+				Push('\tlocal _hFn, _hErr = loadstring("return " .. _hSrc:match("^%%s*(.-)%%s*$"), "@conn_%s_%s")', Block.Name, Conn.signal)
 				Push("\tif _hFn then")
 				Push("\t\tlocal _ok, _handler = pcall(_hFn)")
 				Push("\t\tif _ok and type(_handler) == \"function\" then")
