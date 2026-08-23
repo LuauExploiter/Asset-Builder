@@ -2396,7 +2396,7 @@ local function Build(Target)
                         local Src, IsUrl = GetSrc(Inst)
                         if Src and #Src > 0 then
                             if IsUrl then
-                                local SafeName = Inst.Name:gsub("'", "\\'")
+                                local SafeName = Inst.Name:gsub("\\", "\\\\"):gsub("'", "\\'")
                                 Deferred[#Deferred+1] = string.format(
                                     "pcall(function() local C=game:HttpGet(%q) S(o[%d],'Source',C) if o[%d]:IsA('Script') and not o[%d].Disabled then task.spawn(function() loadstring(C, '@%s')() end) end end)",
                                     Src, Idx, Idx, Idx, SafeName
@@ -2460,8 +2460,9 @@ API.Path = nil
 function API:Build()
     local T = self.Path
     if type(T) == "string" then
+        local LoadFunc = loadstring or load
         local Ok, Inst = pcall(function()
-            return loadstring("return " .. T)()
+            return LoadFunc("return " .. T, "@HikloSerializer")()
         end)
         if Ok and typeof(Inst) == "Instance" then
             return Build(Inst)
