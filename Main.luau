@@ -1711,11 +1711,11 @@ local function Build(Target)
                         if Src and #Src > 0 then
                             if IsUrl then
                                 Deferred[#Deferred+1] = string.format(
-                                    "pcall(function() local C=game:HttpGet(%q) S(o[%d],'Source',C) if o[%d]:IsA('Script') and not o[%d].Disabled then task.spawn(function() loadstring(C)() end) end end)",
+                                    "pcall(function() local C=game:HttpGet(%q) S(o[%d],'Source',C) if o[%d]:IsA('Script') and not o[%d].Disabled then task.spawn(function() loadstring(C, \"\")() end) end end)",
                                     Src, Idx, Idx, Idx
                                 )
                             else
-                                Deferred[#Deferred+1] = string.format("S(o[%d],'Source',[==[%s]==])", Idx, Src)
+                                Deferred[#Deferred+1] = string.format("S(o[%d],'Source',%q)", Idx, Src)
                             end
                         end
                     else
@@ -1776,7 +1776,7 @@ function API:Build()
         local LoadFunc = loadstring or load
         if not LoadFunc then error("loadstring not available") end
         local Ok, Inst = pcall(function()
-            local fn = LoadFunc("return " .. T)
+            local fn = LoadFunc("return " .. T, "")
             if fn then return fn() end
             return nil
         end)
