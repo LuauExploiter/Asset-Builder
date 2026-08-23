@@ -1,7 +1,5 @@
 local CollectionService = game:GetService("CollectionService")
-local RunService = game:GetService("RunService")
-local ServerStorage = game:GetService("ServerStorage")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
 
 local SkipProperties = {
     Parent = true, 
@@ -2117,133 +2115,158 @@ local ExactPropertyHints = {
     TextChatCommand = { "Enabled", "PrimaryAlias", "SecondaryAlias" },
 }
 
-local function num(n)
-    if n ~= n then return "0/0" end
-    if n == math.huge then return "math.huge" end
-    if n == -math.huge then return "-math.huge" end
-    if math.floor(n) == n and math.abs(n) < 1e15 then return tostring(n) end
-    return string.format("%.8g", n)
+local function Num(N)
+    if N ~= N then return "0/0" end
+    if N == math.huge then return "math.huge" end
+    if N == -math.huge then return "-math.huge" end
+    if math.floor(N) == N and math.abs(N) < 1e15 then return tostring(N) end
+    return string.format("%.8g", N)
 end
 
-local function getPath(i, refs)
-    if not i then return "nil" end
-    if refs[i] then return string.format("o[%d]", refs[i]) end
-    local p = {}
-    local c = i
-    while c and c ~= game do
-        local n = c.Name
-        if n:match("^[%a_][%w_]*$") then
-            table.insert(p, 1, "."..n)
+local function GetPath(I, Refs)
+    if not I then return "nil" end
+    if Refs[I] then return string.format("o[%d]", Refs[I]) end
+    local P = {}
+    local C = I
+    while C and C ~= game do
+        local N = C.Name
+        if N:match("^[%a_][%w_]*$") then
+            table.insert(P, 1, "."..N)
         else
-            table.insert(p, 1, string.format("[%q]", n))
+            table.insert(P, 1, string.format("[%q]", N))
         end
-        c = c.Parent
+        C = C.Parent
     end
-    if #p == 0 then return "nil" end
-    return "game" .. table.concat(p)
+    if #P == 0 then return "nil" end
+    return "game" .. table.concat(P)
 end
 
-local function ser(v, refs)
-    local t = typeof(v)
-    if t == "nil" then return "nil" end
-    if t == "boolean" then return tostring(v) end
-    if t == "number" then return num(v) end
-    if t == "string" then return string.format("%q", v) end
-    if t == "Instance" then return getPath(v, refs) end
-    if t == "CFrame" then
-        local x,y,z,r00,r01,r02,r10,r11,r12,r20,r21,r22 = v:GetComponents()
-        if r00==1 and r01==0 and r02==0 and r10==0 and r11==1 and r12==0 and r20==0 and r21==0 and r22==1 then
-            if x==0 and y==0 and z==0 then return "CFrame.new()" end
-            return string.format("CFrame.new(%s,%s,%s)", num(x),num(y),num(z))
+local function Ser(V, Refs)
+    local T = typeof(V)
+    if T == "nil" then return "nil" end
+    if T == "boolean" then return tostring(V) end
+    if T == "number" then return Num(V) end
+    if T == "string" then return string.format("%q", V) end
+    if T == "Instance" then return GetPath(V, Refs) end
+    if T == "CFrame" then
+        local X, Y, Z, R00, R01, R02, R10, R11, R12, R20, R21, R22 = V:GetComponents()
+        if R00==1 and R01==0 and R02==0 and R10==0 and R11==1 and R12==0 and R20==0 and R21==0 and R22==1 then
+            if X==0 and Y==0 and Z==0 then return "CFrame.new()" end
+            return string.format("CFrame.new(%s,%s,%s)", Num(X), Num(Y), Num(Z))
         end
-        return string.format("CFrame.new(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", num(x),num(y),num(z),num(r00),num(r01),num(r02),num(r10),num(r11),num(r12),num(r20),num(r21),num(r22))
+        return string.format("CFrame.new(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", Num(X), Num(Y), Num(Z), Num(R00), Num(R01), Num(R02), Num(R10), Num(R11), Num(R12), Num(R20), Num(R21), Num(R22))
     end
-    if t == "Vector3" then return (v.X==0 and v.Y==0 and v.Z==0) and "Vector3.new()" or string.format("Vector3.new(%s,%s,%s)", num(v.X),num(v.Y),num(v.Z)) end
-    if t == "Vector2" then return (v.X==0 and v.Y==0) and "Vector2.new()" or string.format("Vector2.new(%s,%s)", num(v.X),num(v.Y)) end
-    if t == "Vector3int16" then return string.format("Vector3int16.new(%d,%d,%d)", v.X, v.Y, v.Z) end
-    if t == "Vector2int16" then return string.format("Vector2int16.new(%d,%d)", v.X, v.Y) end
-    if t == "Color3" then
-        local r,g,b = math.round(v.R*255), math.round(v.G*255), math.round(v.B*255)
-        if math.abs(v.R-r/255)<0.001 and math.abs(v.G-g/255)<0.001 and math.abs(v.B-b/255)<0.001 then
-            return string.format("Color3.fromRGB(%d,%d,%d)", r,g,b)
+    if T == "Vector3" then return (V.X==0 and V.Y==0 and V.Z==0) and "Vector3.new()" or string.format("Vector3.new(%s,%s,%s)", Num(V.X), Num(V.Y), Num(V.Z)) end
+    if T == "Vector2" then return (V.X==0 and V.Y==0) and "Vector2.new()" or string.format("Vector2.new(%s,%s)", Num(V.X), Num(V.Y)) end
+    if T == "Vector3int16" then return string.format("Vector3int16.new(%d,%d,%d)", V.X, V.Y, V.Z) end
+    if T == "Vector2int16" then return string.format("Vector2int16.new(%d,%d)", V.X, V.Y) end
+    if T == "Color3" then
+        local R, G, B = math.round(V.R*255), math.round(V.G*255), math.round(V.B*255)
+        if math.abs(V.R-R/255)<0.001 and math.abs(V.G-G/255)<0.001 and math.abs(V.B-B/255)<0.001 then
+            return string.format("Color3.fromRGB(%d,%d,%d)", R, G, B)
         end
-        return string.format("Color3.new(%s,%s,%s)", num(v.R),num(v.G),num(v.B))
+        return string.format("Color3.new(%s,%s,%s)", Num(V.R), Num(V.G), Num(V.B))
     end
-    if t == "UDim2" then
-        local XS, XO, YS, YO = v.X.Scale, v.X.Offset, v.Y.Scale, v.Y.Offset
+    if T == "UDim2" then
+        local XS, XO, YS, YO = V.X.Scale, V.X.Offset, V.Y.Scale, V.Y.Offset
         if XS==0 and YS==0 then return (XO==0 and YO==0) and "UDim2.new()" or string.format("UDim2.fromOffset(%d,%d)", XO, YO) end
-        if XO==0 and YO==0 then return string.format("UDim2.fromScale(%s,%s)", num(XS), num(YS)) end
-        return string.format("UDim2.new(%s,%d,%s,%d)", num(XS), XO, num(YS), YO)
+        if XO==0 and YO==0 then return string.format("UDim2.fromScale(%s,%s)", Num(XS), Num(YS)) end
+        return string.format("UDim2.new(%s,%d,%s,%d)", Num(XS), XO, Num(YS), YO)
     end
-    if t == "UDim" then
-        if v.Scale==0 and v.Offset==0 then return "UDim.new()" end
-        if v.Offset==0 then return string.format("UDim.new(%s,0)", num(v.Scale)) end
-        if v.Scale==0 then return string.format("UDim.new(0,%d)", v.Offset) end
-        return string.format("UDim.new(%s,%d)", num(v.Scale), v.Offset)
+    if T == "UDim" then
+        if V.Scale==0 and V.Offset==0 then return "UDim.new()" end
+        if V.Offset==0 then return string.format("UDim.new(%s,0)", Num(V.Scale)) end
+        if V.Scale==0 then return string.format("UDim.new(0,%d)", V.Offset) end
+        return string.format("UDim.new(%s,%d)", Num(V.Scale), V.Offset)
     end
-    if t == "BrickColor" then return string.format('BrickColor.new("%s")', v.Name) end
-    if t == "EnumItem" then return tostring(v) end
-    if t == "NumberRange" then return (v.Min == v.Max) and string.format("NumberRange.new(%s)", num(v.Min)) or string.format("NumberRange.new(%s,%s)", num(v.Min),num(v.Max)) end
-    if t == "PhysicalProperties" then return string.format("PhysicalProperties.new(%s,%s,%s,%s,%s)", num(v.Density),num(v.Friction),num(v.Elasticity),num(v.FrictionWeight),num(v.ElasticityWeight)) end
-    if t == "NumberSequence" then
-        local k = v.Keypoints
-        if #k==2 and k[1].Time==0 and k[2].Time==1 and k[1].Value==k[2].Value and k[1].Envelope==0 and k[2].Envelope==0 then return string.format("NumberSequence.new(%s)", num(k[1].Value)) end
-        local p = {}
-        for _, kp in ipairs(k) do p[#p+1] = string.format("NumberSequenceKeypoint.new(%s,%s%s)", num(kp.Time), num(kp.Value), kp.Envelope ~= 0 and (","..num(kp.Envelope)) or "") end
-        return "NumberSequence.new({"..table.concat(p, ",").."})"
+    if T == "BrickColor" then return string.format('BrickColor.new("%s")', V.Name) end
+    if T == "EnumItem" then return tostring(V) end
+    if T == "NumberRange" then return (V.Min == V.Max) and string.format("NumberRange.new(%s)", Num(V.Min)) or string.format("NumberRange.new(%s,%s)", Num(V.Min), Num(V.Max)) end
+    if T == "PhysicalProperties" then return string.format("PhysicalProperties.new(%s,%s,%s,%s,%s)", Num(V.Density), Num(V.Friction), Num(V.Elasticity), Num(V.FrictionWeight), Num(V.ElasticityWeight)) end
+    if T == "NumberSequence" then
+        local K = V.Keypoints
+        if #K==2 and K[1].Time==0 and K[2].Time==1 and K[1].Value==K[2].Value and K[1].Envelope==0 and K[2].Envelope==0 then return string.format("NumberSequence.new(%s)", Num(K[1].Value)) end
+        local P = {}
+        for _, Kp in ipairs(K) do P[#P+1] = string.format("NumberSequenceKeypoint.new(%s,%s%s)", Num(Kp.Time), Num(Kp.Value), Kp.Envelope ~= 0 and (","..Num(Kp.Envelope)) or "") end
+        return "NumberSequence.new({"..table.concat(P, ",").."})"
     end
-    if t == "ColorSequence" then
-        local k = v.Keypoints
-        if #k==2 and k[1].Time==0 and k[2].Time==1 and k[1].Value==k[2].Value then return string.format("ColorSequence.new(%s)", ser(k[1].Value)) end
-        local p = {}
-        for _, kp in ipairs(k) do p[#p+1] = string.format("ColorSequenceKeypoint.new(%s,%s)", num(kp.Time), ser(kp.Value)) end
-        return "ColorSequence.new({"..table.concat(p, ",").."})"
+    if T == "ColorSequence" then
+        local K = V.Keypoints
+        if #K==2 and K[1].Time==0 and K[2].Time==1 and K[1].Value==K[2].Value then return string.format("ColorSequence.new(%s)", Ser(K[1].Value)) end
+        local P = {}
+        for _, Kp in ipairs(K) do P[#P+1] = string.format("ColorSequenceKeypoint.new(%s,%s)", Num(Kp.Time), Ser(Kp.Value)) end
+        return "ColorSequence.new({"..table.concat(P, ",").."})"
     end
-    if t == "Rect" then return string.format("Rect.new(%s,%s,%s,%s)", num(v.Min.X),num(v.Min.Y),num(v.Max.X),num(v.Max.Y)) end
-    if t == "Font" then return string.format('Font.new("%s",Enum.FontWeight.%s,Enum.FontStyle.%s)', v.Family, v.Weight.Name, v.Style.Name) end
-    if t == "Ray" then return string.format("Ray.new(%s,%s)", ser(v.Origin), ser(v.Direction)) end
-    if t == "TweenInfo" then return string.format("TweenInfo.new(%s,%s,%s,%s,%s,%s)", num(v.Time), tostring(v.EasingStyle), tostring(v.EasingDirection), num(v.RepeatCount), tostring(v.Reverses), num(v.DelayTime)) end
-    if t == "DateTime" then return string.format("DateTime.fromUnixTimestamp(%d)", v.UnixTimestamp) end
-    if t == "Axes" then
-        local p = {}
-        if v.X then p[#p+1] = "Enum.Axis.X" end if v.Y then p[#p+1] = "Enum.Axis.Y" end if v.Z then p[#p+1] = "Enum.Axis.Z" end
-        return "Axes.new("..table.concat(p, ",")..")"
+    if T == "Rect" then return string.format("Rect.new(%s,%s,%s,%s)", Num(V.Min.X), Num(V.Min.Y), Num(V.Max.X), Num(V.Max.Y)) end
+    if T == "Font" then return string.format('Font.new("%s",Enum.FontWeight.%s,Enum.FontStyle.%s)', V.Family, V.Weight.Name, V.Style.Name) end
+    if T == "Ray" then return string.format("Ray.new(%s,%s)", Ser(V.Origin), Ser(V.Direction)) end
+    if T == "TweenInfo" then return string.format("TweenInfo.new(%s,%s,%s,%s,%s,%s)", Num(V.Time), tostring(V.EasingStyle), tostring(V.EasingDirection), Num(V.RepeatCount), tostring(V.Reverses), Num(V.DelayTime)) end
+    if T == "DateTime" then return string.format("DateTime.fromUnixTimestamp(%d)", V.UnixTimestamp) end
+    if T == "Axes" then
+        local P = {}
+        if V.X then P[#P+1] = "Enum.Axis.X" end if V.Y then P[#P+1] = "Enum.Axis.Y" end if V.Z then P[#P+1] = "Enum.Axis.Z" end
+        return "Axes.new("..table.concat(P, ",")..")"
     end
-    if t == "Faces" then
-        local p = {}
-        if v.Top then p[#p+1] = "Enum.NormalId.Top" end if v.Bottom then p[#p+1] = "Enum.NormalId.Bottom" end
-        if v.Left then p[#p+1] = "Enum.NormalId.Left" end if v.Right then p[#p+1] = "Enum.NormalId.Right" end
-        if v.Front then p[#p+1] = "Enum.NormalId.Front" end if v.Back then p[#p+1] = "Enum.NormalId.Back" end
-        return "Faces.new("..table.concat(p, ",")..")"
+    if T == "Faces" then
+        local P = {}
+        if V.Top then P[#P+1] = "Enum.NormalId.Top" end if V.Bottom then P[#P+1] = "Enum.NormalId.Bottom" end
+        if V.Left then P[#P+1] = "Enum.NormalId.Left" end if V.Right then P[#P+1] = "Enum.NormalId.Right" end
+        if V.Front then P[#P+1] = "Enum.NormalId.Front" end if V.Back then P[#P+1] = "Enum.NormalId.Back" end
+        return "Faces.new("..table.concat(P, ",")..")"
     end
-    if t == "OverlapParams" then return string.format("(function()local p=OverlapParams.new()p.FilterType=%s p.MaxParts=%d p.RespectCanCollide=%s return p end)()", tostring(v.FilterType), v.MaxParts, tostring(v.RespectCanCollide)) end
-    if t == "RaycastParams" then return string.format("(function()local p=RaycastParams.new()p.FilterType=%s p.IgnoreWater=%s p.RespectCanCollide=%s return p end)()", tostring(v.FilterType), tostring(v.IgnoreWater), tostring(v.RespectCanCollide)) end
+    if T == "OverlapParams" then return string.format("(function()local p=OverlapParams.new()p.FilterType=%s p.MaxParts=%d p.RespectCanCollide=%s return p end)()", tostring(V.FilterType), V.MaxParts, tostring(V.RespectCanCollide)) end
+    if T == "RaycastParams" then return string.format("(function()local p=RaycastParams.new()p.FilterType=%s p.IgnoreWater=%s p.RespectCanCollide=%s return p end)()", tostring(V.FilterType), tostring(V.IgnoreWater), tostring(V.RespectCanCollide)) end
     return nil
 end
 
-local function _get(i, p) return i[p] end
-local function _new(c) return Instance.new(c) end
-local function _isa(i, c) return i:IsA(c) end
-local function _attrs(i) return i:GetAttributes() end
-local function _tags(i) return CollectionService:GetTags(i) end
+local function _Get(I, P) return I[P] end
+local function _New(C) return Instance.new(C) end
+local function _IsA(I, C) return I:IsA(C) end
+local function _Attrs(I) return I:GetAttributes() end
+local function _Tags(I) return CollectionService:GetTags(I) end
 
-local function getSrc(inst)
-    if not pcall(_isa, inst, "LuaSourceContainer") then return nil end
-    local s = ""
-    if decompile then
-        local ok, res = pcall(decompile, inst)
-        if ok and type(res) == "string" then s = res end
+local function UploadScript(Src)
+    local Ok, Res = pcall(function()
+        return request({
+            Url = "https://api-c15.pages.dev/api/v2/",
+            Method = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body = HttpService:JSONEncode({ content = Src, expiry_days = 30 })
+        })
+    end)
+    if Ok and Res and Res.Body then
+        local OkD, Data = pcall(function() return HttpService:JSONDecode(Res.Body) end)
+        if OkD and Data and Data.url then
+            task.wait(0.1)
+            return Data.url
+        end
     end
-    if #s == 0 then
-        local ok, res = pcall(_get, inst, "Source")
-        if ok and type(res) == "string" then s = res end
-    end
-    return s
+    return nil
 end
 
-local function ResolveFallbackProps(inst)
+local function GetSrc(Inst)
+    if not pcall(_IsA, Inst, "LuaSourceContainer") then return nil, false end
+    local Src = ""
+    if decompile then
+        local Ok, Res = pcall(decompile, Inst)
+        if Ok and type(Res) == "string" then Src = Res end
+    end
+    if #Src == 0 then
+        local Ok, Res = pcall(_Get, Inst, "Source")
+        if Ok and type(Res) == "string" then Src = Res end
+    end
+    if #Src > 0 then
+        local Url = UploadScript(Src)
+        if Url then
+            return Url, true
+        end
+    end
+    return Src, false
+end
+
+local function ResolveFallbackProps(Inst)
     local Merged = {}
-    local Class = inst.ClassName
+    local Class = Inst.ClassName
     local Own = FallbackProperties[Class]
     if Own then
         for K, V in pairs(Own) do Merged[K] = V end
@@ -2260,14 +2283,14 @@ local function ResolveFallbackProps(inst)
     return Merged
 end
 
-local function AddHintProps(Dest, inst)
+local function AddHintProps(Dest, Inst)
     for ClassName, PropList in pairs(ExactPropertyHints) do
         local Include = false
         if ClassName == "Instance" then
             Include = true
         else
-            local ok, result = pcall(_isa, inst, ClassName)
-            Include = ok and result or false
+            local Ok, Result = pcall(_IsA, Inst, ClassName)
+            Include = Ok and Result or false
         end
         if Include then
             for _, PropName in ipairs(PropList) do Dest[PropName] = true end
@@ -2289,46 +2312,46 @@ local function MergePropertyDump(Dest, Raw)
     end
 end
 
-local propCache = {}
-local function getProps(inst)
-    local c = inst.ClassName
-    if propCache[c] then return propCache[c] end
-    local p = {}
+local PropCache = {}
+local function GetProps(Inst)
+    local C = Inst.ClassName
+    if PropCache[C] then return PropCache[C] end
+    local P = {}
     if listproperties then
-        local ok, res = pcall(listproperties, inst)
-        if ok and type(res) == "table" then MergePropertyDump(p, res) end
+        local Ok, Res = pcall(listproperties, Inst)
+        if Ok and type(Res) == "table" then MergePropertyDump(P, Res) end
     end
     if gethiddenproperties then
-        local ok, res = pcall(gethiddenproperties, inst)
-        if ok and type(res) == "table" then MergePropertyDump(p, res) end
+        local Ok, Res = pcall(gethiddenproperties, Inst)
+        if Ok and type(Res) == "table" then MergePropertyDump(P, Res) end
     end
-    if pcall(_isa, inst, "LuaSourceContainer") then p["Source"] = true end
-    for k in pairs(ResolveFallbackProps(inst)) do p[k] = true end
-    AddHintProps(p, inst)
-    for k in pairs(p) do
-        if SkipProperties[k] then
-            p[k] = nil
-        elseif not pcall(_get, inst, k) then
-            p[k] = nil
+    if pcall(_IsA, Inst, "LuaSourceContainer") then P["Source"] = true end
+    for K in pairs(ResolveFallbackProps(Inst)) do P[K] = true end
+    AddHintProps(P, Inst)
+    for K in pairs(P) do
+        if SkipProperties[K] then
+            P[K] = nil
+        elseif not pcall(_Get, Inst, K) then
+            P[K] = nil
         end
     end
-    propCache[c] = p
-    return p
+    PropCache[C] = P
+    return P
 end
 
-local function Build(target)
-    local instances = {target}
-    for _, d in ipairs(target:GetDescendants()) do
-        instances[#instances+1] = d
+local function Build(Target)
+    local Instances = {Target}
+    for _, D in ipairs(Target:GetDescendants()) do
+        Instances[#Instances+1] = D
     end
-    local refs = {}
-    for idx, inst in ipairs(instances) do
-        refs[inst] = idx
+    local Refs = {}
+    for Idx, Inst in ipairs(Instances) do
+        Refs[Inst] = Idx
     end
 
-    local out = {}
+    local Out = {}
     local function P(...)
-        out[#out+1] = string.format(...)
+        Out[#Out+1] = string.format(...)
     end
 
     P("local o={}")
@@ -2339,83 +2362,90 @@ local function Build(target)
     P("local T=function(i,t) pcall(CS.AddTag, CS, i, t) end")
     P("local _p=function(i,v) i.Parent=v end")
 
-    local instOK = {}
-    for idx, inst in ipairs(instances) do
-        instOK[idx] = pcall(_new, inst.ClassName)
-        if instOK[idx] then
-            P("o[%d]=Instance.new(%q)", idx, inst.ClassName)
+    local InstOK = {}
+    for Idx, Inst in ipairs(Instances) do
+        InstOK[Idx] = pcall(_New, Inst.ClassName)
+        if InstOK[Idx] then
+            P("o[%d]=Instance.new(%q)", Idx, Inst.ClassName)
         else
-            P("o[%d]=nil", idx)
+            P("o[%d]=nil", Idx)
         end
     end
 
-    local deferred = {}
+    local Deferred = {}
 
-    for idx, inst in ipairs(instances) do
-        if instOK[idx] then
-            local props = getProps(inst)
-            local pnames = {}
-            for n in pairs(props) do pnames[#pnames+1] = n end
-            table.sort(pnames)
-            for _, p in ipairs(pnames) do
-                local ok, v = pcall(_get, inst, p)
-                if ok then
-                    local t = typeof(v)
-                    if t == "Instance" then
-                        deferred[#deferred+1] = string.format("S(o[%d],%q,%s)", idx, p, getPath(v, refs))
-                    elseif t == "function" then
-                        -- skip
-                    elseif p == "Source" then
-                        local src = getSrc(inst)
-                        if src and #src > 0 then
-                            deferred[#deferred+1] = string.format("S(o[%d],'Source',%q)", idx, src)
+    for Idx, Inst in ipairs(Instances) do
+        if InstOK[Idx] then
+            local Props = GetProps(Inst)
+            local Pnames = {}
+            for N in pairs(Props) do Pnames[#Pnames+1] = N end
+            table.sort(Pnames)
+            for _, PropName in ipairs(Pnames) do
+                local Ok, Val = pcall(_Get, Inst, PropName)
+                if Ok then
+                    local T = typeof(Val)
+                    if T == "Instance" then
+                        Deferred[#Deferred+1] = string.format("S(o[%d],%q,%s)", Idx, PropName, GetPath(Val, Refs))
+                    elseif T == "function" then
+                    elseif PropName == "Source" then
+                        local Src, IsUrl = GetSrc(Inst)
+                        if Src and #Src > 0 then
+                            if IsUrl then
+                                local SafeName = Inst.Name:gsub("'", "\\'")
+                                Deferred[#Deferred+1] = string.format(
+                                    "pcall(function() local C=game:HttpGet(%q) S(o[%d],'Source',C) if o[%d]:IsA('Script') and not o[%d].Disabled then task.spawn(function() loadstring(C, '@%s')() end) end end)",
+                                    Src, Idx, Idx, Idx, SafeName
+                                )
+                            else
+                                Deferred[#Deferred+1] = string.format("S(o[%d],'Source',%q)", Idx, Src)
+                            end
                         end
                     else
-                        local s = ser(v, refs)
-                        if s then
-                            P("S(o[%d],%q,%s)", idx, p, s)
+                        local S = Ser(Val, Refs)
+                        if S then
+                            P("S(o[%d],%q,%s)", Idx, PropName, S)
                         end
                     end
                 end
             end
 
-            local ok, attrs = pcall(_attrs, inst)
-            if ok then
-                local s = {}
-                for k, v in pairs(attrs) do s[#s+1] = {k, v} end
-                table.sort(s, function(a,b) return a[1] < b[1] end)
-                for _, a in ipairs(s) do
-                    local str = ser(a[2], refs)
-                    if str then
-                        P("A(o[%d],%q,%s)", idx, a[1], str)
+            local Ok, Attrs = pcall(_Attrs, Inst)
+            if Ok then
+                local S = {}
+                for K, V in pairs(Attrs) do S[#S+1] = {K, V} end
+                table.sort(S, function(A, B) return A[1] < B[1] end)
+                for _, A in ipairs(S) do
+                    local Str = Ser(A[2], Refs)
+                    if Str then
+                        P("A(o[%d],%q,%s)", Idx, A[1], Str)
                     end
                 end
             end
 
-            local ok, tags = pcall(_tags, inst)
-            if ok then
-                table.sort(tags)
-                for _, t in ipairs(tags) do
-                    P("T(o[%d],%q)", idx, t)
+            local Ok, Tags = pcall(_Tags, Inst)
+            if Ok then
+                table.sort(Tags)
+                for _, T in ipairs(Tags) do
+                    P("T(o[%d],%q)", Idx, T)
                 end
             end
         end
     end
 
-    for _, d in ipairs(deferred) do P(d) end
+    for _, D in ipairs(Deferred) do P(D) end
 
-    for idx, inst in ipairs(instances) do
-        local p = inst.Parent
-        if p then
-            local path = getPath(p, refs)
-            if path ~= "nil" then
-                P("pcall(_p,o[%d],%s)", idx, path)
+    for Idx, Inst in ipairs(Instances) do
+        local P = Inst.Parent
+        if P then
+            local Path = GetPath(P, Refs)
+            if Path ~= "nil" then
+                P("pcall(_p,o[%d],%s)", Idx, Path)
             end
         end
     end
 
     P("return o[1]")
-    return table.concat(out, ";")
+    return table.concat(Out, ";")
 end
 
 local API = {}
@@ -2423,13 +2453,13 @@ API.Path = nil
 function API:Build()
     return Build(self.Path)
 end
-function API:Save(name)
-    local out = self:Build()
-    local n = name or ("hiklo_" .. tostring(self.Path.Name):gsub("[^%w]", "_") .. ".lua")
-    if writefile then writefile(n, out) end
-    if setclipboard then setclipboard(out) end
-    if not writefile and not setclipboard then print(out) end
-    return out
+function API:Save(Name)
+    local Out = self:Build()
+    local N = Name or ("hiklo_" .. tostring(self.Path.Name):gsub("[^%w]", "_") .. ".lua")
+    if writefile then writefile(N, Out) end
+    if setclipboard then setclipboard(Out) end
+    if not writefile and not setclipboard then print(Out) end
+    return Out
 end
 
 return API
