@@ -133,21 +133,11 @@ FallbackProperties["BasePart"] = {
     Transparency = 0,
 }
 
-FallbackProperties["FormFactorPart"] = {
-}
-
-FallbackProperties["Part"] = {
-    Shape = Enum.PartType.Block,
-}
-
-FallbackProperties["WedgePart"] = {
-}
-
-FallbackProperties["CornerWedgePart"] = {
-}
-
-FallbackProperties["TrussPart"] = {
-}
+FallbackProperties["FormFactorPart"] = {}
+FallbackProperties["Part"] = { Shape = Enum.PartType.Block }
+FallbackProperties["WedgePart"] = {}
+FallbackProperties["CornerWedgePart"] = {}
+FallbackProperties["TrussPart"] = {}
 
 FallbackProperties["SpawnLocation"] = {
     AllowTeamChangeOnTouch = false,
@@ -158,13 +148,8 @@ FallbackProperties["SpawnLocation"] = {
     Shape = Enum.PartType.Block,
 }
 
-FallbackProperties["Platform"] = {
-}
-
-FallbackProperties["Seat"] = {
-    Disabled = false,
-    Occupant = nil,
-}
+FallbackProperties["Platform"] = {}
+FallbackProperties["Seat"] = { Disabled = false, Occupant = nil }
 
 FallbackProperties["VehicleSeat"] = {
     Disabled = false,
@@ -207,17 +192,8 @@ FallbackProperties["SpecialMesh"] = {
     VertexColor = Vector3.new(1, 1, 1),
 }
 
-FallbackProperties["CylinderMesh"] = {
-    Offset = Vector3.new(),
-    RotationOffset = Vector3.new(),
-    Scale = Vector3.new(1, 1, 1),
-}
-
-FallbackProperties["BlockMesh"] = {
-    Offset = Vector3.new(),
-    RotationOffset = Vector3.new(),
-    Scale = Vector3.new(1, 1, 1),
-}
+FallbackProperties["CylinderMesh"] = { Offset = Vector3.new(), RotationOffset = Vector3.new(), Scale = Vector3.new(1, 1, 1) }
+FallbackProperties["BlockMesh"] = { Offset = Vector3.new(), RotationOffset = Vector3.new(), Scale = Vector3.new(1, 1, 1) }
 
 FallbackProperties["FileMesh"] = {
     MeshId = "",
@@ -266,9 +242,7 @@ FallbackProperties["Model"] = {
     WorldPivot = CFrame.new(),
 }
 
-FallbackProperties["Folder"] = {
-}
-
+FallbackProperties["Folder"] = {}
 FallbackProperties["Tool"] = {
     CanBeDropped = true,
     Enabled = true,
@@ -282,14 +256,9 @@ FallbackProperties["Tool"] = {
     ToolTip = "",
 }
 
-FallbackProperties["Backpack"] = {
-}
-
-FallbackProperties["StarterPack"] = {
-}
-
-FallbackProperties["StarterGear"] = {
-}
+FallbackProperties["Backpack"] = {}
+FallbackProperties["StarterPack"] = {}
+FallbackProperties["StarterGear"] = {}
 
 FallbackProperties["Hat"] = {
     AttachmentForward = Vector3.new(0, 0, -1),
@@ -303,73 +272,25 @@ FallbackProperties["Accessory"] = {
     AttachmentPoint = CFrame.new(),
 }
 
-FallbackProperties["Script"] = {
-    Disabled = false,
-    RunContext = Enum.RunContext.Legacy,
-    Source = "",
-}
+FallbackProperties["Script"] = { Disabled = false, RunContext = Enum.RunContext.Legacy, Source = "" }
+FallbackProperties["LocalScript"] = { Disabled = false, Source = "" }
+FallbackProperties["ModuleScript"] = { Source = "" }
 
-FallbackProperties["LocalScript"] = {
-    Disabled = false,
-    Source = "",
-}
+FallbackProperties["StringValue"] = { Value = "" }
+FallbackProperties["NumberValue"] = { Value = 0 }
+FallbackProperties["BoolValue"] = { Value = false }
+FallbackProperties["IntValue"] = { Value = 0 }
+FallbackProperties["Vector3Value"] = { Value = Vector3.new() }
+FallbackProperties["CFrameValue"] = { Value = CFrame.new() }
+FallbackProperties["ObjectValue"] = { Value = nil }
+FallbackProperties["Color3Value"] = { Value = Color3.new() }
+FallbackProperties["BrickColorValue"] = { Value = BrickColor.new("Medium stone grey") }
+FallbackProperties["RayValue"] = { Value = Ray.new(Vector3.new(), Vector3.new()) }
 
-FallbackProperties["ModuleScript"] = {
-    Source = "",
-}
-
-FallbackProperties["StringValue"] = {
-    Value = "",
-}
-
-FallbackProperties["NumberValue"] = {
-    Value = 0,
-}
-
-FallbackProperties["BoolValue"] = {
-    Value = false,
-}
-
-FallbackProperties["IntValue"] = {
-    Value = 0,
-}
-
-FallbackProperties["Vector3Value"] = {
-    Value = Vector3.new(),
-}
-
-FallbackProperties["CFrameValue"] = {
-    Value = CFrame.new(),
-}
-
-FallbackProperties["ObjectValue"] = {
-    Value = nil,
-}
-
-FallbackProperties["Color3Value"] = {
-    Value = Color3.new(),
-}
-
-FallbackProperties["BrickColorValue"] = {
-    Value = BrickColor.new("Medium stone grey"),
-}
-
-FallbackProperties["RayValue"] = {
-    Value = Ray.new(Vector3.new(), Vector3.new()),
-}
-
-FallbackProperties["Animation"] = {
-    AnimationId = "",
-}
-
-FallbackProperties["Animator"] = {
-}
-
-FallbackProperties["AnimationController"] = {
-}
-
-FallbackProperties["AnimationTrack"] = {
-}
+FallbackProperties["Animation"] = { AnimationId = "" }
+FallbackProperties["Animator"] = {}
+FallbackProperties["AnimationController"] = {}
+FallbackProperties["AnimationTrack"] = {}
 
 FallbackProperties["BodyColors"] = {
     HeadColor3 = Color3.fromRGB(163, 162, 165),
@@ -380,24 +301,10 @@ FallbackProperties["BodyColors"] = {
     TorsoColor3 = Color3.fromRGB(163, 162, 165),
 }
 
-FallbackProperties["CharacterMesh"] = {
-    BaseTextureId = 0,
-    MeshId = 0,
-    OverlayTextureId = 0,
-}
-
-FallbackProperties["Pants"] = {
-    PantsTemplate = "",
-}
-
-FallbackProperties["Shirt"] = {
-    ShirtTemplate = "",
-}
-
-FallbackProperties["ShirtGraphic"] = {
-    Color3 = Color3.new(1, 1, 1),
-    Graphic = "",
-}
+FallbackProperties["CharacterMesh"] = { BaseTextureId = 0, MeshId = 0, OverlayTextureId = 0 }
+FallbackProperties["Pants"] = { PantsTemplate = "" }
+FallbackProperties["Shirt"] = { ShirtTemplate = "" }
+FallbackProperties["ShirtGraphic"] = { Color3 = Color3.new(1, 1, 1), Graphic = "" }
 
 FallbackProperties["WrapLayer"] = {
     AutoSkin = Enum.WrapLayerAutoSkin.Disabled,
@@ -460,69 +367,15 @@ FallbackProperties["SoundService"] = {
     VolumetricAudio = Enum.VolumetricAudio.Disabled,
 }
 
-FallbackProperties["EqualizerSoundEffect"] = {
-    HighGain = 0,
-    LowGain = 0,
-    MidGain = 0,
-    Priority = 0,
-}
-
-FallbackProperties["ReverbSoundEffect"] = {
-    DecayTime = 1.5,
-    Density = 1,
-    Diffusion = 1,
-    DryLevel = -6,
-    Priority = 0,
-    WetLevel = 0,
-}
-
-FallbackProperties["ChorusSoundEffect"] = {
-    Depth = 1,
-    Mix = 50,
-    Priority = 0,
-    Rate = 0.45,
-}
-
-FallbackProperties["CompressorSoundEffect"] = {
-    Attack = 0.003,
-    GainMakeup = 0,
-    Priority = 0,
-    Release = 0.5,
-    SideChain = nil,
-    Threshold = -24,
-}
-
-FallbackProperties["DistortionSoundEffect"] = {
-    Level = 0,
-    Priority = 0,
-}
-
-FallbackProperties["EchoSoundEffect"] = {
-    Delay = 1,
-    DryLevel = 0,
-    FeedBack = 0.5,
-    Priority = 0,
-    WetLevel = -6,
-}
-
-FallbackProperties["FlangeSoundEffect"] = {
-    Depth = 45,
-    Mix = 50,
-    Priority = 0,
-    Rate = 0.45,
-}
-
-FallbackProperties["PitchShiftSoundEffect"] = {
-    Octave = 1,
-    Priority = 0,
-}
-
-FallbackProperties["TremoloSoundEffect"] = {
-    Depth = 1,
-    Duty = 50,
-    Frequency = 5,
-    Priority = 0,
-}
+FallbackProperties["EqualizerSoundEffect"] = { HighGain = 0, LowGain = 0, MidGain = 0, Priority = 0 }
+FallbackProperties["ReverbSoundEffect"] = { DecayTime = 1.5, Density = 1, Diffusion = 1, DryLevel = -6, Priority = 0, WetLevel = 0 }
+FallbackProperties["ChorusSoundEffect"] = { Depth = 1, Mix = 50, Priority = 0, Rate = 0.45 }
+FallbackProperties["CompressorSoundEffect"] = { Attack = 0.003, GainMakeup = 0, Priority = 0, Release = 0.5, SideChain = nil, Threshold = -24 }
+FallbackProperties["DistortionSoundEffect"] = { Level = 0, Priority = 0 }
+FallbackProperties["EchoSoundEffect"] = { Delay = 1, DryLevel = 0, FeedBack = 0.5, Priority = 0, WetLevel = -6 }
+FallbackProperties["FlangeSoundEffect"] = { Depth = 45, Mix = 50, Priority = 0, Rate = 0.45 }
+FallbackProperties["PitchShiftSoundEffect"] = { Octave = 1, Priority = 0 }
+FallbackProperties["TremoloSoundEffect"] = { Depth = 1, Duty = 50, Frequency = 5, Priority = 0 }
 
 FallbackProperties["AudioPlayer"] = {
     AssetId = "",
@@ -533,89 +386,21 @@ FallbackProperties["AudioPlayer"] = {
     Volume = 1,
 }
 
-FallbackProperties["AudioEmitter"] = {
-}
-
-FallbackProperties["AudioListener"] = {
-}
-
-FallbackProperties["AudioAnalyzer"] = {
-}
-
-FallbackProperties["AudioChorus"] = {
-    Bypass = false,
-    Depth = 0.15,
-    Mix = 0.5,
-    Rate = 0.5,
-}
-
-FallbackProperties["AudioCompressor"] = {
-    Attack = 0.05,
-    Bypass = false,
-    GainMakeup = 0,
-    Ratio = 4,
-    Release = 0.1,
-    Threshold = -24,
-}
-
-FallbackProperties["AudioDistortion"] = {
-    Bypass = false,
-    Level = 0,
-}
-
-FallbackProperties["AudioEqualizer"] = {
-    Bypass = false,
-    HighGain = 0,
-    LowGain = 0,
-    MidGain = 0,
-}
-
-FallbackProperties["AudioFader"] = {
-    Bypass = false,
-    Volume = 1,
-}
-
-FallbackProperties["AudioFlanger"] = {
-    Bypass = false,
-    Depth = 45,
-    Mix = 0.5,
-    Rate = 0.5,
-}
-
-FallbackProperties["AudioPitchShifter"] = {
-    Bypass = false,
-    Octave = 1,
-}
-
-FallbackProperties["AudioReverb"] = {
-    Bypass = false,
-    DecayTime = 1.5,
-    Density = 1,
-    Diffusion = 1,
-    DryLevel = 0,
-    WetLevel = -6,
-}
-
-FallbackProperties["AudioTremolo"] = {
-    Bypass = false,
-    Depth = 1,
-    Duty = 50,
-    Frequency = 5,
-}
-
-FallbackProperties["AudioDeviceInput"] = {
-    Active = false,
-    Muted = false,
-    Player = nil,
-}
-
-FallbackProperties["AudioDeviceOutput"] = {
-    Muted = false,
-    Player = nil,
-}
-
-FallbackProperties["Wire"] = {
-}
+FallbackProperties["AudioEmitter"] = {}
+FallbackProperties["AudioListener"] = {}
+FallbackProperties["AudioAnalyzer"] = {}
+FallbackProperties["AudioChorus"] = { Bypass = false, Depth = 0.15, Mix = 0.5, Rate = 0.5 }
+FallbackProperties["AudioCompressor"] = { Attack = 0.05, Bypass = false, GainMakeup = 0, Ratio = 4, Release = 0.1, Threshold = -24 }
+FallbackProperties["AudioDistortion"] = { Bypass = false, Level = 0 }
+FallbackProperties["AudioEqualizer"] = { Bypass = false, HighGain = 0, LowGain = 0, MidGain = 0 }
+FallbackProperties["AudioFader"] = { Bypass = false, Volume = 1 }
+FallbackProperties["AudioFlanger"] = { Bypass = false, Depth = 45, Mix = 0.5, Rate = 0.5 }
+FallbackProperties["AudioPitchShifter"] = { Bypass = false, Octave = 1 }
+FallbackProperties["AudioReverb"] = { Bypass = false, DecayTime = 1.5, Density = 1, Diffusion = 1, DryLevel = 0, WetLevel = -6 }
+FallbackProperties["AudioTremolo"] = { Bypass = false, Depth = 1, Duty = 50, Frequency = 5 }
+FallbackProperties["AudioDeviceInput"] = { Active = false, Muted = false, Player = nil }
+FallbackProperties["AudioDeviceOutput"] = { Muted = false, Player = nil }
+FallbackProperties["Wire"] = {}
 
 FallbackProperties["Attachment"] = {
     Axis = Vector3.new(1, 0, 0),
@@ -950,18 +735,8 @@ FallbackProperties["AlignOrientation"] = {
     Visible = false,
 }
 
-FallbackProperties["WeldConstraint"] = {
-    Enabled = true,
-    Part0 = nil,
-    Part1 = nil,
-}
-
-FallbackProperties["Weld"] = {
-    C0 = CFrame.new(),
-    C1 = CFrame.new(),
-    Part0 = nil,
-    Part1 = nil,
-}
+FallbackProperties["WeldConstraint"] = { Enabled = true, Part0 = nil, Part1 = nil }
+FallbackProperties["Weld"] = { C0 = CFrame.new(), C1 = CFrame.new(), Part0 = nil, Part1 = nil }
 
 FallbackProperties["Motor6D"] = {
     C0 = CFrame.new(),
@@ -973,50 +748,13 @@ FallbackProperties["Motor6D"] = {
     Part1 = nil,
 }
 
-FallbackProperties["Snap"] = {
-    C0 = CFrame.new(),
-    C1 = CFrame.new(),
-    Part0 = nil,
-    Part1 = nil,
-}
+FallbackProperties["Snap"] = { C0 = CFrame.new(), C1 = CFrame.new(), Part0 = nil, Part1 = nil }
+FallbackProperties["ManualWeld"] = { C0 = CFrame.new(), C1 = CFrame.new(), Part0 = nil, Part1 = nil }
+FallbackProperties["ManualGlue"] = { C0 = CFrame.new(), C1 = CFrame.new(), Part0 = nil, Part1 = nil }
+FallbackProperties["Motor"] = { C0 = CFrame.new(), C1 = CFrame.new(), CurrentAngle = 0, DesiredAngle = 0, MaxVelocity = 0.1, Part0 = nil, Part1 = nil }
+FallbackProperties["Glue"] = { C0 = CFrame.new(), C1 = CFrame.new(), Part0 = nil, Part1 = nil }
 
-FallbackProperties["ManualWeld"] = {
-    C0 = CFrame.new(),
-    C1 = CFrame.new(),
-    Part0 = nil,
-    Part1 = nil,
-}
-
-FallbackProperties["ManualGlue"] = {
-    C0 = CFrame.new(),
-    C1 = CFrame.new(),
-    Part0 = nil,
-    Part1 = nil,
-}
-
-FallbackProperties["Motor"] = {
-    C0 = CFrame.new(),
-    C1 = CFrame.new(),
-    CurrentAngle = 0,
-    DesiredAngle = 0,
-    MaxVelocity = 0.1,
-    Part0 = nil,
-    Part1 = nil,
-}
-
-FallbackProperties["Glue"] = {
-    C0 = CFrame.new(),
-    C1 = CFrame.new(),
-    Part0 = nil,
-    Part1 = nil,
-}
-
-FallbackProperties["RigidConstraint"] = {
-    Attachment0 = nil,
-    Attachment1 = nil,
-    Enabled = true,
-    Visible = false,
-}
+FallbackProperties["RigidConstraint"] = { Attachment0 = nil, Attachment1 = nil, Enabled = true, Visible = false }
 
 FallbackProperties["SliderConstraint"] = {
     ActuatorType = Enum.ActuatorType.None,
@@ -1035,40 +773,12 @@ FallbackProperties["SliderConstraint"] = {
     Visible = false,
 }
 
-FallbackProperties["BodyVelocity"] = {
-    MaxForce = Vector3.new(4000, 4000, 4000),
-    P = 10000,
-    Velocity = Vector3.new(),
-}
-
-FallbackProperties["BodyPosition"] = {
-    D = 500,
-    MaxForce = Vector3.new(4000, 4000, 4000),
-    P = 10000,
-    Position = Vector3.new(),
-}
-
-FallbackProperties["BodyForce"] = {
-    Force = Vector3.new(),
-}
-
-FallbackProperties["BodyAngularVelocity"] = {
-    AngularVelocity = Vector3.new(),
-    MaxTorque = Vector3.new(4000, 4000, 4000),
-    P = 10000,
-}
-
-FallbackProperties["BodyGyro"] = {
-    CFrame = CFrame.new(),
-    D = 500,
-    MaxTorque = Vector3.new(4000, 4000, 4000),
-    P = 10000,
-}
-
-FallbackProperties["BodyThrust"] = {
-    Force = Vector3.new(),
-    Location = Vector3.new(),
-}
+FallbackProperties["BodyVelocity"] = { MaxForce = Vector3.new(4000, 4000, 4000), P = 10000, Velocity = Vector3.new() }
+FallbackProperties["BodyPosition"] = { D = 500, MaxForce = Vector3.new(4000, 4000, 4000), P = 10000, Position = Vector3.new() }
+FallbackProperties["BodyForce"] = { Force = Vector3.new() }
+FallbackProperties["BodyAngularVelocity"] = { AngularVelocity = Vector3.new(), MaxTorque = Vector3.new(4000, 4000, 4000), P = 10000 }
+FallbackProperties["BodyGyro"] = { CFrame = CFrame.new(), D = 500, MaxTorque = Vector3.new(4000, 4000, 4000), P = 10000 }
+FallbackProperties["BodyThrust"] = { Force = Vector3.new(), Location = Vector3.new() }
 
 FallbackProperties["RocketPropulsion"] = {
     CartoonFactor = 0.7,
@@ -1084,33 +794,9 @@ FallbackProperties["RocketPropulsion"] = {
     TurnP = 100,
 }
 
-FallbackProperties["PointLight"] = {
-    Brightness = 1,
-    Color = Color3.new(1, 1, 1),
-    Enabled = true,
-    Range = 16,
-    Shadows = false,
-}
-
-FallbackProperties["SpotLight"] = {
-    Angle = 45,
-    Brightness = 1,
-    Color = Color3.new(1, 1, 1),
-    Enabled = true,
-    Face = Enum.NormalId.Front,
-    Range = 16,
-    Shadows = false,
-}
-
-FallbackProperties["SurfaceLight"] = {
-    Angle = 90,
-    Brightness = 1,
-    Color = Color3.new(1, 1, 1),
-    Enabled = true,
-    Face = Enum.NormalId.Front,
-    Range = 16,
-    Shadows = false,
-}
+FallbackProperties["PointLight"] = { Brightness = 1, Color = Color3.new(1, 1, 1), Enabled = true, Range = 16, Shadows = false }
+FallbackProperties["SpotLight"] = { Angle = 45, Brightness = 1, Color = Color3.new(1, 1, 1), Enabled = true, Face = Enum.NormalId.Front, Range = 16, Shadows = false }
+FallbackProperties["SurfaceLight"] = { Angle = 90, Brightness = 1, Color = Color3.new(1, 1, 1), Enabled = true, Face = Enum.NormalId.Front, Range = 16, Shadows = false }
 
 FallbackProperties["Atmosphere"] = {
     Color = Color3.fromRGB(199, 199, 199),
@@ -1136,45 +822,12 @@ FallbackProperties["Sky"] = {
     SunTextureId = "",
 }
 
-FallbackProperties["Clouds"] = {
-    Cover = 0.5,
-    Density = 0.9,
-    Enabled = true,
-}
-
-FallbackProperties["Bloom"] = {
-    Enabled = true,
-    Intensity = 0.5,
-    Size = 56,
-    Threshold = 0.95,
-}
-
-FallbackProperties["Blur"] = {
-    Enabled = true,
-    Size = 24,
-}
-
-FallbackProperties["ColorCorrection"] = {
-    Brightness = 0,
-    Contrast = 0,
-    Enabled = true,
-    Saturation = 0,
-    TintColor = Color3.new(1, 1, 1),
-}
-
-FallbackProperties["DepthOfField"] = {
-    Enabled = true,
-    FarIntensity = 0,
-    FocusDistance = 50,
-    InFocusRadius = 10,
-    NearIntensity = 0,
-}
-
-FallbackProperties["SunRaysEffect"] = {
-    Enabled = true,
-    Intensity = 0.5,
-    Spread = 1,
-}
+FallbackProperties["Clouds"] = { Cover = 0.5, Density = 0.9, Enabled = true }
+FallbackProperties["Bloom"] = { Enabled = true, Intensity = 0.5, Size = 56, Threshold = 0.95 }
+FallbackProperties["Blur"] = { Enabled = true, Size = 24 }
+FallbackProperties["ColorCorrection"] = { Brightness = 0, Contrast = 0, Enabled = true, Saturation = 0, TintColor = Color3.new(1, 1, 1) }
+FallbackProperties["DepthOfField"] = { Enabled = true, FarIntensity = 0, FocusDistance = 50, InFocusRadius = 10, NearIntensity = 0 }
+FallbackProperties["SunRaysEffect"] = { Enabled = true, Intensity = 0.5, Spread = 1 }
 
 FallbackProperties["ProximityPrompt"] = {
     ActionText = "Interact",
@@ -1191,27 +844,10 @@ FallbackProperties["ProximityPrompt"] = {
     UIOffset = Vector2.new(),
 }
 
-FallbackProperties["ClickDetector"] = {
-    CursorIcon = "",
-    MaxActivationDistance = 32,
-}
-
-FallbackProperties["ForceField"] = {
-    Visible = true,
-}
-
-FallbackProperties["PathfindingModifier"] = {
-    IsBlocked = false,
-    Label = "",
-    PassThrough = false,
-}
-
-FallbackProperties["PathfindingLink"] = {
-    Attachment0 = nil,
-    Attachment1 = nil,
-    Bidirectional = true,
-    Label = "",
-}
+FallbackProperties["ClickDetector"] = { CursorIcon = "", MaxActivationDistance = 32 }
+FallbackProperties["ForceField"] = { Visible = true }
+FallbackProperties["PathfindingModifier"] = { IsBlocked = false, Label = "", PassThrough = false }
+FallbackProperties["PathfindingLink"] = { Attachment0 = nil, Attachment1 = nil, Bidirectional = true, Label = "" }
 
 FallbackProperties["Dialog"] = {
     BehaviorType = Enum.DialogBehaviorType.SinglePlayer,
@@ -1307,15 +943,8 @@ FallbackProperties["TextChatService"] = {
     CreateDefaultTextChannels = true,
 }
 
-FallbackProperties["TextChannel"] = {
-    WelcomeMessage = "",
-}
-
-FallbackProperties["TextChatCommand"] = {
-    Enabled = true,
-    PrimaryAlias = "",
-    SecondaryAlias = "",
-}
+FallbackProperties["TextChannel"] = { WelcomeMessage = "" }
+FallbackProperties["TextChatCommand"] = { Enabled = true, PrimaryAlias = "", SecondaryAlias = "" }
 
 FallbackProperties["ChatWindowConfiguration"] = {
     BackgroundColor3 = Color3.fromRGB(0, 0, 0),
@@ -1437,36 +1066,10 @@ FallbackProperties["SurfaceGui"] = {
     ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 }
 
-FallbackProperties["Frame"] = {
-    BackgroundTransparency = 0,
-    Size = UDim2.fromOffset(100, 100),
-}
-
-FallbackProperties["TextLabel"] = {
-    BackgroundTransparency = 1,
-    Size = UDim2.fromOffset(200, 50),
-    Text = "Label",
-}
-
-FallbackProperties["TextButton"] = {
-    AutoButtonColor = true,
-    Modal = false,
-    Selected = false,
-    Size = UDim2.fromOffset(200, 50),
-    Style = Enum.ButtonStyle.Custom,
-    Text = "Button",
-}
-
-FallbackProperties["TextBox"] = {
-    ClearTextOnFocus = true,
-    MultiLine = false,
-    PlaceholderColor3 = Color3.new(0.75, 0.75, 0.75),
-    PlaceholderText = "",
-    ShowNativeInput = true,
-    Text = "",
-    TextEditable = true,
-    TextXAlignment = Enum.TextXAlignment.Left,
-}
+FallbackProperties["Frame"] = { BackgroundTransparency = 0, Size = UDim2.fromOffset(100, 100) }
+FallbackProperties["TextLabel"] = { BackgroundTransparency = 1, Size = UDim2.fromOffset(200, 50), Text = "Label" }
+FallbackProperties["TextButton"] = { AutoButtonColor = true, Modal = false, Selected = false, Size = UDim2.fromOffset(200, 50), Style = Enum.ButtonStyle.Custom, Text = "Button" }
+FallbackProperties["TextBox"] = { ClearTextOnFocus = true, MultiLine = false, PlaceholderColor3 = Color3.new(0.75, 0.75, 0.75), PlaceholderText = "", ShowNativeInput = true, Text = "", TextEditable = true, TextXAlignment = Enum.TextXAlignment.Left }
 
 FallbackProperties["ImageLabel"] = {
     BackgroundTransparency = 1,
@@ -1520,47 +1123,12 @@ FallbackProperties["ScrollingFrame"] = {
     VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Right,
 }
 
-FallbackProperties["VideoFrame"] = {
-    Looped = false,
-    Playing = false,
-    TimePosition = 0,
-    Video = "",
-    Volume = 0.5,
-}
-
-FallbackProperties["ViewportFrame"] = {
-    Ambient = Color3.new(1, 1, 1),
-    CurrentCamera = nil,
-    ImageColor3 = Color3.new(1, 1, 1),
-    ImageTransparency = 0,
-    LightColor = Color3.new(1, 1, 1),
-    LightDirection = Vector3.new(0, -1, -1),
-}
-
-FallbackProperties["CanvasGroup"] = {
-    GroupColor3 = Color3.new(1, 1, 1),
-    GroupTransparency = 0,
-}
-
-FallbackProperties["UICorner"] = {
-    CornerRadius = UDim.new(0, 0),
-}
-
-FallbackProperties["UIStroke"] = {
-    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-    Color = Color3.new(),
-    Enabled = true,
-    LineJoinMode = Enum.LineJoinMode.Round,
-    Thickness = 1,
-    Transparency = 0,
-}
-
-FallbackProperties["UIPadding"] = {
-    PaddingBottom = UDim.new(),
-    PaddingLeft = UDim.new(),
-    PaddingRight = UDim.new(),
-    PaddingTop = UDim.new(),
-}
+FallbackProperties["VideoFrame"] = { Looped = false, Playing = false, TimePosition = 0, Video = "", Volume = 0.5 }
+FallbackProperties["ViewportFrame"] = { Ambient = Color3.new(1, 1, 1), CurrentCamera = nil, ImageColor3 = Color3.new(1, 1, 1), ImageTransparency = 0, LightColor = Color3.new(1, 1, 1), LightDirection = Vector3.new(0, -1, -1) }
+FallbackProperties["CanvasGroup"] = { GroupColor3 = Color3.new(1, 1, 1), GroupTransparency = 0 }
+FallbackProperties["UICorner"] = { CornerRadius = UDim.new(0, 0) }
+FallbackProperties["UIStroke"] = { ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Color = Color3.new(), Enabled = true, LineJoinMode = Enum.LineJoinMode.Round, Thickness = 1, Transparency = 0 }
+FallbackProperties["UIPadding"] = { PaddingBottom = UDim.new(), PaddingLeft = UDim.new(), PaddingRight = UDim.new(), PaddingTop = UDim.new() }
 
 FallbackProperties["UIListLayout"] = {
     FillDirection = Enum.FillDirection.Vertical,
@@ -1609,154 +1177,27 @@ FallbackProperties["UIPageLayout"] = {
     TouchInputEnabled = true,
 }
 
-FallbackProperties["UISizeConstraint"] = {
-    MaxSize = Vector2.new(math.huge, math.huge),
-    MinSize = Vector2.new(),
-}
+FallbackProperties["UISizeConstraint"] = { MaxSize = Vector2.new(math.huge, math.huge), MinSize = Vector2.new() }
+FallbackProperties["UITextSizeConstraint"] = { MaxTextSize = 100, MinTextSize = 1 }
+FallbackProperties["UIAspectRatioConstraint"] = { AspectRatio = 1, AspectType = Enum.AspectType.FitWithinMaxSize, DominantAxis = Enum.DominantAxis.Width }
+FallbackProperties["UIFlexItem"] = { FlexMode = Enum.UIFlexMode.None, GrowRatio = 0, ItemLineAlignment = Enum.ItemLineAlignment.Automatic, ShrinkRatio = 0 }
+FallbackProperties["UIGradient"] = { Color = ColorSequence.new(Color3.new(1, 1, 1)), Enabled = true, Offset = Vector2.new(), Rotation = 0, Transparency = NumberSequence.new(0) }
+FallbackProperties["UIScale"] = { Scale = 1 }
 
-FallbackProperties["UITextSizeConstraint"] = {
-    MaxTextSize = 100,
-    MinTextSize = 1,
-}
+FallbackProperties["SelectionBox"] = { Adornee = nil, Color3 = Color3.new(0, 0, 1), LineThickness = 0.1, SurfaceColor3 = Color3.new(0, 0, 1), SurfaceTransparency = 0.5, Visible = true }
+FallbackProperties["SelectionSphere"] = { Adornee = nil, Color3 = Color3.new(0, 0, 1), SurfaceColor3 = Color3.new(0, 0, 1), SurfaceTransparency = 0.5, Visible = true }
 
-FallbackProperties["UIAspectRatioConstraint"] = {
-    AspectRatio = 1,
-    AspectType = Enum.AspectType.FitWithinMaxSize,
-    DominantAxis = Enum.DominantAxis.Width,
-}
+FallbackProperties["BoxHandleAdornment"] = { Adornee = nil, AlwaysOnTop = false, Color3 = Color3.new(1, 1, 1), Size = Vector3.new(1, 1, 1), SizeRelativeOffset = Vector3.new(), Transparency = 0, Visible = true, ZIndex = 0 }
+FallbackProperties["SphereHandleAdornment"] = { Adornee = nil, AlwaysOnTop = false, Color3 = Color3.new(1, 1, 1), Radius = 1, Transparency = 0, Visible = true, ZIndex = 0 }
+FallbackProperties["ConeHandleAdornment"] = { Adornee = nil, AlwaysOnTop = false, Color3 = Color3.new(1, 1, 1), Height = 1, Radius = 0.25, Transparency = 0, Visible = true, ZIndex = 0 }
+FallbackProperties["CylinderHandleAdornment"] = { Adornee = nil, AlwaysOnTop = false, Color3 = Color3.new(1, 1, 1), Height = 1, InnerRadius = 0, Radius = 1, Transparency = 0, Visible = true, ZIndex = 0 }
+FallbackProperties["LineHandleAdornment"] = { Adornee = nil, AlwaysOnTop = false, Color3 = Color3.new(1, 1, 1), Length = 1, Thickness = 1, Transparency = 0, Visible = true, ZIndex = 0 }
+FallbackProperties["ImageHandleAdornment"] = { Adornee = nil, AlwaysOnTop = false, Color3 = Color3.new(1, 1, 1), Image = "", RelativeSize = 0, SizeRelativeOffset = Vector3.new(), Transparency = 0, Visible = true, ZIndex = 0 }
+FallbackProperties["ArcHandles"] = { Adornee = nil, AlwaysOnTop = false, Color3 = Color3.new(0, 0, 1), Visible = true, ZIndex = 0 }
+FallbackProperties["Handles"] = { Adornee = nil, AlwaysOnTop = false, Color3 = Color3.new(0, 0, 1), Faces = Faces.new(), Style = Enum.HandlesStyle.Resize, Visible = true, ZIndex = 0 }
 
-FallbackProperties["UIFlexItem"] = {
-    FlexMode = Enum.UIFlexMode.None,
-    GrowRatio = 0,
-    ItemLineAlignment = Enum.ItemLineAlignment.Automatic,
-    ShrinkRatio = 0,
-}
-
-FallbackProperties["UIGradient"] = {
-    Color = ColorSequence.new(Color3.new(1, 1, 1)),
-    Enabled = true,
-    Offset = Vector2.new(),
-    Rotation = 0,
-    Transparency = NumberSequence.new(0),
-}
-
-FallbackProperties["UIScale"] = {
-    Scale = 1,
-}
-
-FallbackProperties["SelectionBox"] = {
-    Adornee = nil,
-    Color3 = Color3.new(0, 0, 1),
-    LineThickness = 0.1,
-    SurfaceColor3 = Color3.new(0, 0, 1),
-    SurfaceTransparency = 0.5,
-    Visible = true,
-}
-
-FallbackProperties["SelectionSphere"] = {
-    Adornee = nil,
-    Color3 = Color3.new(0, 0, 1),
-    SurfaceColor3 = Color3.new(0, 0, 1),
-    SurfaceTransparency = 0.5,
-    Visible = true,
-}
-
-FallbackProperties["BoxHandleAdornment"] = {
-    Adornee = nil,
-    AlwaysOnTop = false,
-    Color3 = Color3.new(1, 1, 1),
-    Size = Vector3.new(1, 1, 1),
-    SizeRelativeOffset = Vector3.new(),
-    Transparency = 0,
-    Visible = true,
-    ZIndex = 0,
-}
-
-FallbackProperties["SphereHandleAdornment"] = {
-    Adornee = nil,
-    AlwaysOnTop = false,
-    Color3 = Color3.new(1, 1, 1),
-    Radius = 1,
-    Transparency = 0,
-    Visible = true,
-    ZIndex = 0,
-}
-
-FallbackProperties["ConeHandleAdornment"] = {
-    Adornee = nil,
-    AlwaysOnTop = false,
-    Color3 = Color3.new(1, 1, 1),
-    Height = 1,
-    Radius = 0.25,
-    Transparency = 0,
-    Visible = true,
-    ZIndex = 0,
-}
-
-FallbackProperties["CylinderHandleAdornment"] = {
-    Adornee = nil,
-    AlwaysOnTop = false,
-    Color3 = Color3.new(1, 1, 1),
-    Height = 1,
-    InnerRadius = 0,
-    Radius = 1,
-    Transparency = 0,
-    Visible = true,
-    ZIndex = 0,
-}
-
-FallbackProperties["LineHandleAdornment"] = {
-    Adornee = nil,
-    AlwaysOnTop = false,
-    Color3 = Color3.new(1, 1, 1),
-    Length = 1,
-    Thickness = 1,
-    Transparency = 0,
-    Visible = true,
-    ZIndex = 0,
-}
-
-FallbackProperties["ImageHandleAdornment"] = {
-    Adornee = nil,
-    AlwaysOnTop = false,
-    Color3 = Color3.new(1, 1, 1),
-    Image = "",
-    RelativeSize = 0,
-    SizeRelativeOffset = Vector3.new(),
-    Transparency = 0,
-    Visible = true,
-    ZIndex = 0,
-}
-
-FallbackProperties["ArcHandles"] = {
-    Adornee = nil,
-    AlwaysOnTop = false,
-    Color3 = Color3.new(0, 0, 1),
-    Visible = true,
-    ZIndex = 0,
-}
-
-FallbackProperties["Handles"] = {
-    Adornee = nil,
-    AlwaysOnTop = false,
-    Color3 = Color3.new(0, 0, 1),
-    Faces = Faces.new(),
-    Style = Enum.HandlesStyle.Resize,
-    Visible = true,
-    ZIndex = 0,
-}
-
-FallbackProperties["SelectionPartLasso"] = {
-    Color = BrickColor.new("Bright blue"),
-    Humanoid = nil,
-    Part = nil,
-}
-
-FallbackProperties["SelectionPointLasso"] = {
-    Color = BrickColor.new("Bright blue"),
-    Humanoid = nil,
-    Point = Vector3.new(),
-}
+FallbackProperties["SelectionPartLasso"] = { Color = BrickColor.new("Bright blue"), Humanoid = nil, Part = nil }
+FallbackProperties["SelectionPointLasso"] = { Color = BrickColor.new("Bright blue"), Humanoid = nil, Point = Vector3.new() }
 
 FallbackProperties["Highlight"] = {
     Adornee = nil,
@@ -1768,24 +1209,13 @@ FallbackProperties["Highlight"] = {
     OutlineTransparency = 0,
 }
 
-FallbackProperties["RemoteEvent"] = {
-}
+FallbackProperties["RemoteEvent"] = {}
+FallbackProperties["RemoteFunction"] = {}
+FallbackProperties["BindableEvent"] = {}
+FallbackProperties["BindableFunction"] = {}
+FallbackProperties["Configuration"] = {}
 
-FallbackProperties["RemoteFunction"] = {
-}
-
-FallbackProperties["BindableEvent"] = {
-}
-
-FallbackProperties["BindableFunction"] = {
-}
-
-FallbackProperties["Configuration"] = {
-}
-
-FallbackProperties["MaterialService"] = {
-    Use2022Materials = true,
-}
+FallbackProperties["MaterialService"] = { Use2022Materials = true }
 
 FallbackProperties["MaterialVariant"] = {
     BaseMaterial = Enum.Material.SmoothPlastic,
@@ -1806,13 +1236,8 @@ FallbackProperties["Terrain"] = {
     WaterWaveSpeed = 10,
 }
 
-FallbackProperties["TerrainRegion"] = {
-}
-
-FallbackProperties["StarterGui"] = {
-    AutoResetLocalPlayerCamera = true,
-    ShowTalkativeMessages = true,
-}
+FallbackProperties["TerrainRegion"] = {}
+FallbackProperties["StarterGui"] = { AutoResetLocalPlayerCamera = true, ShowTalkativeMessages = true }
 
 FallbackProperties["StarterPlayer"] = {
     AutoJumpEnabled = false,
@@ -1826,17 +1251,9 @@ FallbackProperties["StarterPlayer"] = {
     MouseIconEnabled = true,
 }
 
-FallbackProperties["StarterPlayerScripts"] = {
-}
-
-FallbackProperties["LocalizationService"] = {
-    CoreScriptLocalizationsEnabled = true,
-}
-
-FallbackProperties["Chat"] = {
-    BubbleChatEnabled = false,
-    TypingIndicator = false,
-}
+FallbackProperties["StarterPlayerScripts"] = {}
+FallbackProperties["LocalizationService"] = { CoreScriptLocalizationsEnabled = true }
+FallbackProperties["Chat"] = { BubbleChatEnabled = false, TypingIndicator = false }
 
 local GuiObjectClasses = { "Frame", "TextLabel", "TextButton", "TextBox", "ImageLabel", "ImageButton", "ScrollingFrame", "VideoFrame", "ViewportFrame", "CanvasGroup" }
 local TextClasses = { "TextLabel", "TextButton", "TextBox" }
@@ -1857,200 +1274,97 @@ for _, Class in ipairs(TextClasses) do
 end
 
 local Inheritance = {
-    Part = {"BasePart", "Instance"},
-    WedgePart = {"BasePart", "Instance"},
-    CornerWedgePart = {"BasePart", "Instance"},
-    TrussPart = {"BasePart", "Instance"},
-    SpawnLocation = {"BasePart", "Instance"},
-    Platform = {"BasePart", "Instance"},
-    Seat = {"BasePart", "Instance"},
-    VehicleSeat = {"BasePart", "Instance"},
-    MeshPart = {"BasePart", "Instance"},
-    UnionOperation = {"BasePart", "Instance"},
-    PartOperation = {"BasePart", "Instance"},
-    NegateOperation = {"BasePart", "Instance"},
-    IntersectOperation = {"BasePart", "Instance"},
-    FormFactorPart = {"BasePart", "Instance"},
-    SpecialMesh = {"Instance"},
-    CylinderMesh = {"Instance"},
-    BlockMesh = {"Instance"},
-    FileMesh = {"Instance"},
-    Decal = {"Instance"},
-    Texture = {"Instance"},
-    SurfaceAppearance = {"Instance"},
-    Model = {"Instance"},
-    Folder = {"Instance"},
-    Tool = {"Instance"},
-    Hat = {"Instance"},
-    Accessory = {"Instance"},
-    Backpack = {"Instance"},
-    StarterPack = {"Instance"},
-    StarterGear = {"Instance"},
-    Configuration = {"Instance"},
-    MaterialService = {"Instance"},
+    Part = {"BasePart", "Instance"}, WedgePart = {"BasePart", "Instance"},
+    CornerWedgePart = {"BasePart", "Instance"}, TrussPart = {"BasePart", "Instance"},
+    SpawnLocation = {"BasePart", "Instance"}, Platform = {"BasePart", "Instance"},
+    Seat = {"BasePart", "Instance"}, VehicleSeat = {"BasePart", "Instance"},
+    MeshPart = {"BasePart", "Instance"}, UnionOperation = {"BasePart", "Instance"},
+    PartOperation = {"BasePart", "Instance"}, NegateOperation = {"BasePart", "Instance"},
+    IntersectOperation = {"BasePart", "Instance"}, FormFactorPart = {"BasePart", "Instance"},
+    SpecialMesh = {"Instance"}, CylinderMesh = {"Instance"},
+    BlockMesh = {"Instance"}, FileMesh = {"Instance"},
+    Decal = {"Instance"}, Texture = {"Instance"}, SurfaceAppearance = {"Instance"},
+    Model = {"Instance"}, Folder = {"Instance"}, Tool = {"Instance"},
+    Hat = {"Instance"}, Accessory = {"Instance"},
+    Backpack = {"Instance"}, StarterPack = {"Instance"}, StarterGear = {"Instance"},
+    Configuration = {"Instance"}, MaterialService = {"Instance"},
     MaterialVariant = {"Instance"},
-    Script = {"Instance"},
-    LocalScript = {"Instance"},
-    ModuleScript = {"Instance"},
-    StringValue = {"Instance"},
-    NumberValue = {"Instance"},
-    BoolValue = {"Instance"},
-    IntValue = {"Instance"},
-    Vector3Value = {"Instance"},
-    CFrameValue = {"Instance"},
-    ObjectValue = {"Instance"},
-    Color3Value = {"Instance"},
-    BrickColorValue = {"Instance"},
-    RayValue = {"Instance"},
-    Animation = {"Instance"},
-    Animator = {"Instance"},
-    AnimationController = {"Instance"},
-    AnimationTrack = {"Instance"},
-    Sound = {"Instance"},
-    SoundService = {"Instance"},
-    EqualizerSoundEffect = {"Instance"},
-    ReverbSoundEffect = {"Instance"},
-    ChorusSoundEffect = {"Instance"},
-    CompressorSoundEffect = {"Instance"},
-    DistortionSoundEffect = {"Instance"},
-    EchoSoundEffect = {"Instance"},
-    FlangeSoundEffect = {"Instance"},
-    PitchShiftSoundEffect = {"Instance"},
+    Script = {"Instance"}, LocalScript = {"Instance"}, ModuleScript = {"Instance"},
+    StringValue = {"Instance"}, NumberValue = {"Instance"}, BoolValue = {"Instance"},
+    IntValue = {"Instance"}, Vector3Value = {"Instance"}, CFrameValue = {"Instance"},
+    ObjectValue = {"Instance"}, Color3Value = {"Instance"},
+    BrickColorValue = {"Instance"}, RayValue = {"Instance"},
+    Animation = {"Instance"}, Animator = {"Instance"},
+    AnimationController = {"Instance"}, AnimationTrack = {"Instance"},
+    Sound = {"Instance"}, SoundService = {"Instance"},
+    EqualizerSoundEffect = {"Instance"}, ReverbSoundEffect = {"Instance"},
+    ChorusSoundEffect = {"Instance"}, CompressorSoundEffect = {"Instance"},
+    DistortionSoundEffect = {"Instance"}, EchoSoundEffect = {"Instance"},
+    FlangeSoundEffect = {"Instance"}, PitchShiftSoundEffect = {"Instance"},
     TremoloSoundEffect = {"Instance"},
-    AudioPlayer = {"Instance"},
-    AudioEmitter = {"Instance"},
-    AudioListener = {"Instance"},
-    AudioAnalyzer = {"Instance"},
-    AudioChorus = {"Instance"},
-    AudioCompressor = {"Instance"},
-    AudioDistortion = {"Instance"},
-    AudioEqualizer = {"Instance"},
-    AudioFader = {"Instance"},
-    AudioFlanger = {"Instance"},
-    AudioPitchShifter = {"Instance"},
-    AudioReverb = {"Instance"},
-    AudioTremolo = {"Instance"},
-    AudioDeviceInput = {"Instance"},
-    AudioDeviceOutput = {"Instance"},
-    Wire = {"Instance"},
-    Attachment = {"Instance"},
-    Bone = {"Attachment", "Instance"},
-    Beam = {"Instance"},
-    Trail = {"Instance"},
-    ParticleEmitter = {"Instance"},
-    Fire = {"Instance"},
-    Smoke = {"Instance"},
-    Sparkles = {"Instance"},
-    BodyVelocity = {"Instance"},
-    BodyPosition = {"Instance"},
-    BodyForce = {"Instance"},
-    BodyAngularVelocity = {"Instance"},
-    BodyGyro = {"Instance"},
-    BodyThrust = {"Instance"},
-    RocketPropulsion = {"Instance"},
-    RopeConstraint = {"Instance"},
-    SpringConstraint = {"Instance"},
-    HingeConstraint = {"Instance"},
-    BallSocketConstraint = {"Instance"},
-    CylindricalConstraint = {"Instance"},
-    PrismaticConstraint = {"Instance"},
-    TorsionSpringConstraint = {"Instance"},
-    UniversalConstraint = {"Instance"},
-    WeldConstraint = {"Instance"},
-    LinearVelocityConstraint = {"Instance"},
-    AngularVelocityConstraint = {"Instance"},
-    AlignPosition = {"Instance"},
-    AlignOrientation = {"Instance"},
-    Weld = {"Instance"},
-    Motor6D = {"Instance"},
-    Snap = {"Instance"},
-    ManualWeld = {"Instance"},
-    ManualGlue = {"Instance"},
-    Motor = {"Instance"},
-    Glue = {"Instance"},
-    RigidConstraint = {"Instance"},
-    SliderConstraint = {"Instance"},
-    PointLight = {"Instance"},
-    SpotLight = {"Instance"},
-    SurfaceLight = {"Instance"},
-    Atmosphere = {"Instance"},
-    Sky = {"Instance"},
-    Clouds = {"Instance"},
-    Bloom = {"Instance"},
-    Blur = {"Instance"},
-    ColorCorrection = {"Instance"},
-    DepthOfField = {"Instance"},
-    SunRaysEffect = {"Instance"},
+    AudioPlayer = {"Instance"}, AudioEmitter = {"Instance"},
+    AudioListener = {"Instance"}, AudioAnalyzer = {"Instance"},
+    AudioChorus = {"Instance"}, AudioCompressor = {"Instance"},
+    AudioDistortion = {"Instance"}, AudioEqualizer = {"Instance"},
+    AudioFader = {"Instance"}, AudioFlanger = {"Instance"},
+    AudioPitchShifter = {"Instance"}, AudioReverb = {"Instance"},
+    AudioTremolo = {"Instance"}, AudioDeviceInput = {"Instance"},
+    AudioDeviceOutput = {"Instance"}, Wire = {"Instance"},
+    Attachment = {"Instance"}, Bone = {"Attachment", "Instance"},
+    Beam = {"Instance"}, Trail = {"Instance"},
+    ParticleEmitter = {"Instance"}, Fire = {"Instance"},
+    Smoke = {"Instance"}, Sparkles = {"Instance"},
+    BodyVelocity = {"Instance"}, BodyPosition = {"Instance"},
+    BodyForce = {"Instance"}, BodyAngularVelocity = {"Instance"},
+    BodyGyro = {"Instance"}, BodyThrust = {"Instance"},
+    RocketPropulsion = {"Instance"}, RopeConstraint = {"Instance"},
+    SpringConstraint = {"Instance"}, HingeConstraint = {"Instance"},
+    BallSocketConstraint = {"Instance"}, CylindricalConstraint = {"Instance"},
+    PrismaticConstraint = {"Instance"}, TorsionSpringConstraint = {"Instance"},
+    UniversalConstraint = {"Instance"}, WeldConstraint = {"Instance"},
+    LinearVelocityConstraint = {"Instance"}, AngularVelocityConstraint = {"Instance"},
+    AlignPosition = {"Instance"}, AlignOrientation = {"Instance"},
+    Weld = {"Instance"}, Motor6D = {"Instance"}, Snap = {"Instance"},
+    ManualWeld = {"Instance"}, ManualGlue = {"Instance"}, Motor = {"Instance"}, Glue = {"Instance"},
+    RigidConstraint = {"Instance"}, SliderConstraint = {"Instance"},
+    PointLight = {"Instance"}, SpotLight = {"Instance"}, SurfaceLight = {"Instance"},
+    Atmosphere = {"Instance"}, Sky = {"Instance"}, Clouds = {"Instance"},
+    Bloom = {"Instance"}, Blur = {"Instance"}, ColorCorrection = {"Instance"},
+    DepthOfField = {"Instance"}, SunRaysEffect = {"Instance"},
     IKControl = {"Instance"},
-    Humanoid = {"Instance"},
-    HumanoidDescription = {"Instance"},
-    BodyColors = {"Instance"},
-    CharacterMesh = {"Instance"},
-    Pants = {"Instance"},
-    Shirt = {"Instance"},
-    ShirtGraphic = {"Instance"},
-    WrapLayer = {"Instance"},
-    WrapTarget = {"Instance"},
-    Camera = {"Instance"},
-    ScreenGui = {"Instance"},
-    BillboardGui = {"Instance"},
-    SurfaceGui = {"Instance"},
-    Frame = {"Instance"},
-    TextLabel = {"Instance"},
-    TextButton = {"Instance"},
-    TextBox = {"Instance"},
-    ImageLabel = {"Instance"},
-    ImageButton = {"Instance"},
-    ScrollingFrame = {"Instance"},
-    VideoFrame = {"Instance"},
-    ViewportFrame = {"Instance"},
-    CanvasGroup = {"Instance"},
-    UICorner = {"Instance"},
-    UIStroke = {"Instance"},
-    UIPadding = {"Instance"},
-    UIListLayout = {"Instance"},
-    UIGridLayout = {"Instance"},
-    UITableLayout = {"Instance"},
-    UIPageLayout = {"Instance"},
-    UISizeConstraint = {"Instance"},
-    UITextSizeConstraint = {"Instance"},
-    UIAspectRatioConstraint = {"Instance"},
-    UIFlexItem = {"Instance"},
-    UIGradient = {"Instance"},
-    UIScale = {"Instance"},
-    ProximityPrompt = {"Instance"},
-    ClickDetector = {"Instance"},
-    ForceField = {"Instance"},
-    PathfindingModifier = {"Instance"},
-    PathfindingLink = {"Instance"},
-    SelectionBox = {"Instance"},
-    SelectionSphere = {"Instance"},
-    BoxHandleAdornment = {"Instance"},
-    SphereHandleAdornment = {"Instance"},
-    ConeHandleAdornment = {"Instance"},
-    CylinderHandleAdornment = {"Instance"},
-    LineHandleAdornment = {"Instance"},
-    ImageHandleAdornment = {"Instance"},
-    ArcHandles = {"Instance"},
-    Handles = {"Instance"},
-    SelectionPartLasso = {"Instance"},
-    SelectionPointLasso = {"Instance"},
-    Highlight = {"Instance"},
-    RemoteEvent = {"Instance"},
-    RemoteFunction = {"Instance"},
-    BindableEvent = {"Instance"},
-    BindableFunction = {"Instance"},
-    Dialog = {"Instance"},
-    DialogChoice = {"Instance"},
-    TextChatService = {"Instance"},
-    TextChannel = {"Instance"},
+    Humanoid = {"Instance"}, HumanoidDescription = {"Instance"},
+    BodyColors = {"Instance"}, CharacterMesh = {"Instance"},
+    Pants = {"Instance"}, Shirt = {"Instance"}, ShirtGraphic = {"Instance"},
+    WrapLayer = {"Instance"}, WrapTarget = {"Instance"},
+    Camera = {"Instance"}, ScreenGui = {"Instance"},
+    BillboardGui = {"Instance"}, SurfaceGui = {"Instance"},
+    Frame = {"Instance"}, TextLabel = {"Instance"}, TextButton = {"Instance"},
+    TextBox = {"Instance"}, ImageLabel = {"Instance"}, ImageButton = {"Instance"},
+    ScrollingFrame = {"Instance"}, VideoFrame = {"Instance"},
+    ViewportFrame = {"Instance"}, CanvasGroup = {"Instance"},
+    UICorner = {"Instance"}, UIStroke = {"Instance"}, UIPadding = {"Instance"},
+    UIListLayout = {"Instance"}, UIGridLayout = {"Instance"},
+    UITableLayout = {"Instance"}, UIPageLayout = {"Instance"},
+    UISizeConstraint = {"Instance"}, UITextSizeConstraint = {"Instance"},
+    UIAspectRatioConstraint = {"Instance"}, UIFlexItem = {"Instance"},
+    UIGradient = {"Instance"}, UIScale = {"Instance"},
+    ProximityPrompt = {"Instance"}, ClickDetector = {"Instance"},
+    ForceField = {"Instance"}, PathfindingModifier = {"Instance"},
+    PathfindingLink = {"Instance"}, SelectionBox = {"Instance"},
+    SelectionSphere = {"Instance"}, BoxHandleAdornment = {"Instance"},
+    SphereHandleAdornment = {"Instance"}, ConeHandleAdornment = {"Instance"},
+    CylinderHandleAdornment = {"Instance"}, LineHandleAdornment = {"Instance"},
+    ImageHandleAdornment = {"Instance"}, ArcHandles = {"Instance"},
+    Handles = {"Instance"}, SelectionPartLasso = {"Instance"},
+    SelectionPointLasso = {"Instance"}, Highlight = {"Instance"},
+    RemoteEvent = {"Instance"}, RemoteFunction = {"Instance"},
+    BindableEvent = {"Instance"}, BindableFunction = {"Instance"},
+    Dialog = {"Instance"}, DialogChoice = {"Instance"},
+    TextChatService = {"Instance"}, TextChannel = {"Instance"},
     TextChatCommand = {"Instance"},
-    ChatWindowConfiguration = {"Instance"},
-    BubbleChatConfiguration = {"Instance"},
-    StarterGui = {"Instance"},
-    StarterPlayer = {"Instance"},
-    StarterPlayerScripts = {"Instance"},
-    LocalizationService = {"Instance"},
+    ChatWindowConfiguration = {"Instance"}, BubbleChatConfiguration = {"Instance"},
+    StarterGui = {"Instance"}, StarterPlayer = {"Instance"},
+    StarterPlayerScripts = {"Instance"}, LocalizationService = {"Instance"},
     Chat = {"Instance"},
 }
 
@@ -2354,7 +1668,7 @@ local function Build(Target)
 
     P("local o={}")
     P("local _s=function(i,p,v) i[p]=v end")
-    P("local S=function(i,p,v) local Ok,Err=pcall(function() i[p]=v end) if not Ok and sethiddenproperty then pcall(sethiddenproperty,i,p,v) end end")
+    P("local S=function(i,p,v) local Ok,Err=pcall(function() i[p]=v end) if not Ok and sethiddenproperty then pcall(function() sethiddenproperty(i,p,v) end) end end")
     P("local A=function(i,a,v) pcall(function() i:SetAttribute(a,v) end) end")
     P("local CS=game:GetService('CollectionService')")
     P("local T=function(i,t) pcall(function() CS:AddTag(i,t) end) end")
@@ -2398,7 +1712,7 @@ local function Build(Target)
                             if IsUrl then
                                 local SafeName = Inst.Name:gsub("[%c\\%']", function(c) return string.format("\\%d", c:byte()) end)
                                 Deferred[#Deferred+1] = string.format(
-                                    "pcall(function() local C=game:HttpGet(%q) S(o[%d],'Source',C) if o[%d]:IsA('Script') and not o[%d].Disabled then task.spawn(function() local F=loadstring or load if F then local fn=F(C,'@%s') if fn then fn() end end end) end end)",
+                                    "pcall(function() local C=game:HttpGet(%q) S(o[%d],'Source',C) if o[%d]:IsA('Script') and not o[%d].Disabled then task.spawn(function() local F=loadstring or load if F then local fn, err = F(C, '@%s') if fn then fn() end end end) end end)",
                                     Src, Idx, Idx, Idx, SafeName
                                 )
                             else
