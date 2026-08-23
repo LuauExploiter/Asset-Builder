@@ -1556,17 +1556,37 @@ local function UploadScript(Src)
     return nil
 end
 
+-- FIXED: GetSrc now prefers Source, validates Lua, and doesn't upload invalid code
 local function GetSrc(Inst)
     if not pcall(_IsA, Inst, "LuaSourceContainer") then return nil, false end
+
+    local function isValidLua(code)
+        if type(code) ~= "string" or #code == 0 then return false end
+        local LoadFunc = loadstring or load
+        if LoadFunc then
+            local ok = pcall(function() LoadFunc(code) end)
+            return ok
+        end
+        return true -- cannot validate, assume valid
+    end
+
     local Src = ""
-    if decompile then
+    -- Try original Source first
+    local Ok, Res = pcall(_Get, Inst, "Source")
+    if Ok and type(Res) == "string" and #Res > 0 then
+        if isValidLua(Res) then
+            Src = Res
+        end
+    end
+
+    -- Fallback to decompile if Source missing or invalid
+    if #Src == 0 and decompile then
         local Ok, Res = pcall(decompile, Inst)
-        if Ok and type(Res) == "string" then Src = Res end
+        if Ok and type(Res) == "string" and #Res > 0 and isValidLua(Res) then
+            Src = Res
+        end
     end
-    if #Src == 0 then
-        local Ok, Res = pcall(_Get, Inst, "Source")
-        if Ok and type(Res) == "string" then Src = Res end
-    end
+
     if #Src > 0 then
         local Url = UploadScript(Src)
         if Url then
@@ -1710,10 +1730,7 @@ local function Build(Target)
                         local Src, IsUrl = GetSrc(Inst)
                         if Src and #Src > 0 then
                             if IsUrl then
-                                Deferred[#Deferred+1] = string.format(
-                                    "pcall(function() local C=game:HttpGet(%q) S(o[%d],'Source',C) if o[%d]:IsA('Script') and not o[%d].Disabled then task.spawn(function() loadstring(C, \"\")() end) end end)",
-                                    Src, Idx, Idx, Idx
-                                )
+                                Deferred[#Deferred+1] = string.format("S(o[%d],'Source',game:HttpGet(%q))", Idx, Src)
                             else
                                 Deferred[#Deferred+1] = string.format("S(o[%d],'Source',%q)", Idx, Src)
                             end
