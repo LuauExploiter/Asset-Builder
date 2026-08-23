@@ -1682,8 +1682,8 @@ local function Build(Target)
     end
 
     local Out = {}
-    -- FIX: P now treats a single argument as a raw string
-    local function P(...)
+    -- Use Emit instead of P to avoid shadowing
+    local function Emit(...)
         local args = {...}
         if #args == 1 then
             Out[#Out+1] = args[1]
@@ -1692,13 +1692,13 @@ local function Build(Target)
         end
     end
 
-    P("local o={}")
-    P("local _s=function(i,p,v) i[p]=v end")
-    P("local S=function(i,p,v) local Ok,Err=pcall(function() i[p]=v end) if not Ok and sethiddenproperty then pcall(function() sethiddenproperty(i,p,v) end) end end")
-    P("local A=function(i,a,v) pcall(function() i:SetAttribute(a,v) end) end")
-    P("local CS=game:GetService('CollectionService')")
-    P("local T=function(i,t) pcall(function() CS:AddTag(i,t) end) end")
-    P("local _p=function(i,v) pcall(function() i.Parent=v end) end")
+    Emit("local o={}")
+    Emit("local _s=function(i,p,v) i[p]=v end")
+    Emit("local S=function(i,p,v) local Ok,Err=pcall(function() i[p]=v end) if not Ok and sethiddenproperty then pcall(function() sethiddenproperty(i,p,v) end) end end")
+    Emit("local A=function(i,a,v) pcall(function() i:SetAttribute(a,v) end) end")
+    Emit("local CS=game:GetService('CollectionService')")
+    Emit("local T=function(i,t) pcall(function() CS:AddTag(i,t) end) end")
+    Emit("local _p=function(i,v) pcall(function() i.Parent=v end) end")
 
     local InstOK = {}
     local IsDummy = {}
@@ -1709,11 +1709,11 @@ local function Build(Target)
         
         if Ok then
             InstOK[Idx] = true
-            P("o[%d]=Instance.new(%q)", Idx, Inst.ClassName)
+            Emit("o[%d]=Instance.new(%q)", Idx, Inst.ClassName)
         else
             InstOK[Idx] = true
             IsDummy[Idx] = true
-            P("o[%d]=Instance.new('Folder')", Idx)
+            Emit("o[%d]=Instance.new('Folder')", Idx)
         end
     end
 
@@ -1744,7 +1744,7 @@ local function Build(Target)
                     else
                         local S = Ser(Val, Refs)
                         if S then
-                            P("S(o[%d],%q,%s)", Idx, PropName, S)
+                            Emit("S(o[%d],%q,%s)", Idx, PropName, S)
                         end
                     end
                 end
@@ -1758,7 +1758,7 @@ local function Build(Target)
                 for _, A in ipairs(S) do
                     local Str = Ser(A[2], Refs)
                     if Str then
-                        P("A(o[%d],%q,%s)", Idx, A[1], Str)
+                        Emit("A(o[%d],%q,%s)", Idx, A[1], Str)
                     end
                 end
             end
@@ -1767,17 +1767,17 @@ local function Build(Target)
             if Ok then
                 table.sort(Tags)
                 for _, T in ipairs(Tags) do
-                    P("T(o[%d],%q)", Idx, T)
+                    Emit("T(o[%d],%q)", Idx, T)
                 end
             end
         elseif IsDummy[Idx] then
-            P("S(o[%d],'Name',%q)", Idx, Inst.Name)
+            Emit("S(o[%d],'Name',%q)", Idx, Inst.Name)
         end
     end
 
-    -- Now we can safely append Deferred raw strings without format interpretation
+    -- Append deferred lines as raw strings
     for _, D in ipairs(Deferred) do
-        P(D)
+        Emit(D)
     end
 
     for Idx, Inst in ipairs(Instances) do
@@ -1785,12 +1785,12 @@ local function Build(Target)
         if Parent then
             local Path = GetPath(Parent, Refs)
             if Path ~= "nil" then
-                P("pcall(_p,o[%d],%s)", Idx, Path)
+                Emit("pcall(_p,o[%d],%s)", Idx, Path)
             end
         end
     end
 
-    P("return o[1]")
+    Emit("return o[1]")
     return table.concat(Out, "\n")
 end
 
@@ -1821,4 +1821,5 @@ function API:Save(Name)
     if not writefile and not setclipboard then print(Out) end
     return Out
 end
+
 return API
