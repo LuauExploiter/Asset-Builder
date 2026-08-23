@@ -90,6 +90,7 @@ local SkipProperties = {
     ShapePartial = true,
     ShapeRotation = true,
     ShapeStyle = true,
+    CameraMode = true,
 }
 
 local FallbackProperties = {}
@@ -1815,7 +1816,6 @@ FallbackProperties["StarterPlayer"] = {
     AutoJumpEnabled = false,
     CameraMaxZoomDistance = 400,
     CameraMinZoomDistance = 0.5,
-    CameraMode = Enum.CameraMode.Custom,
     CharacterJumpHeight = 7.2,
     CharacterJumpPower = 50,
     CharacterUseJumpPower = false,
@@ -2458,7 +2458,17 @@ end
 local API = {}
 API.Path = nil
 function API:Build()
-    return Build(self.Path)
+    local T = self.Path
+    if type(T) == "string" then
+        local Ok, Inst = pcall(function()
+            return loadstring("return " .. T)()
+        end)
+        if Ok and typeof(Inst) == "Instance" then
+            return Build(Inst)
+        end
+        error("Invalid Path string: " .. T)
+    end
+    return Build(T)
 end
 function API:Save(Name)
     local Out = self:Build()
