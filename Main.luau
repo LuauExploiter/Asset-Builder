@@ -1682,8 +1682,14 @@ local function Build(Target)
     end
 
     local Out = {}
+    -- FIX: P now treats a single argument as a raw string
     local function P(...)
-        Out[#Out+1] = string.format(...)
+        local args = {...}
+        if #args == 1 then
+            Out[#Out+1] = args[1]
+        else
+            Out[#Out+1] = string.format(...)
+        end
     end
 
     P("local o={}")
@@ -1769,7 +1775,10 @@ local function Build(Target)
         end
     end
 
-    for _, D in ipairs(Deferred) do P(D) end
+    -- Now we can safely append Deferred raw strings without format interpretation
+    for _, D in ipairs(Deferred) do
+        P(D)
+    end
 
     for Idx, Inst in ipairs(Instances) do
         local P = Inst.Parent
@@ -1812,5 +1821,4 @@ function API:Save(Name)
     if not writefile and not setclipboard then print(Out) end
     return Out
 end
-
 return API
