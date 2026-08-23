@@ -86,6 +86,10 @@ local SkipProperties = {
     TopSurfaceInput = true,
     Shiny = true,
     Specular = true,
+    ShapeInOut = true,
+    ShapePartial = true,
+    ShapeRotation = true,
+    ShapeStyle = true,
 }
 
 local FallbackProperties = {}
@@ -693,10 +697,6 @@ FallbackProperties["ParticleEmitter"] = {
     Rate = 20,
     RotSpeed = NumberRange.new(0),
     Rotation = NumberRange.new(0),
-    ShapeInOut = Enum.ParticleEmitterShapeInOut.Out,
-    ShapePartial = Enum.ParticleEmitterShapePartial.Full,
-    ShapeRotation = 0,
-    ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume,
     Size = NumberSequence.new(1),
     Speed = NumberRange.new(5),
     SpreadAngle = Vector2.new(),
@@ -2082,7 +2082,7 @@ local ExactPropertyHints = {
     IKControl = { "ChainRoot", "Enabled", "EndEffector", "Offset", "Pole", "Priority", "SmoothTime", "Target", "Type", "Weight" },
     Beam = { "Attachment0", "Attachment1", "Brightness", "Color", "CurveSize0", "CurveSize1", "Enabled", "FaceCamera", "LightEmission", "LightInfluence", "Segments", "Texture", "TextureLength", "TextureMode", "TextureSpeed", "Transparency", "Width0", "Width1", "ZOffset" },
     Trail = { "Attachment0", "Attachment1", "Brightness", "Color", "Enabled", "FaceCamera", "Lifetime", "LightEmission", "LightInfluence", "MaxLength", "MinLength", "Texture", "TextureLength", "TextureMode", "Transparency", "WidthScale" },
-    ParticleEmitter = { "Acceleration", "Brightness", "Color", "Drag", "EmissionDirection", "Enabled", "FlipbookFramerate", "FlipbookLayout", "FlipbookMode", "LifeTime", "LightEmission", "LightInfluence", "LockedToPart", "Orientation", "Rate", "RotSpeed", "Rotation", "ShapeInOut", "ShapePartial", "ShapeRotation", "ShapeStyle", "Size", "Speed", "SpreadAngle", "Squash", "Texture", "TimeScale", "Transparency", "VelocityInheritance", "ZOffset" },
+    ParticleEmitter = { "Acceleration", "Brightness", "Color", "Drag", "EmissionDirection", "Enabled", "FlipbookFramerate", "FlipbookLayout", "FlipbookMode", "LifeTime", "LightEmission", "LightInfluence", "LockedToPart", "Orientation", "Rate", "RotSpeed", "Rotation", "Size", "Speed", "SpreadAngle", "Squash", "Texture", "TimeScale", "Transparency", "VelocityInheritance", "ZOffset" },
     Sound = { "EmitterSize", "Looped", "MaxDistance", "PlayOnRemove", "PlaybackRegionsEnabled", "PlaybackSpeed", "RollOffMaxDistance", "RollOffMinDistance", "RollOffMode", "SoundGroup", "SoundId", "TimePosition", "Volume" },
     AudioPlayer = { "AssetId", "Looping", "PlaybackRegionsEnabled", "PlaybackSpeed", "TimePosition", "Volume" },
     AlignPosition = { "ApplyAtCenterOfMass", "Attachment0", "Attachment1", "Enabled", "ForceLimitMode", "MaxAxesForce", "MaxForce", "MaxVelocity", "Mode", "Position", "ReactionForceEnabled", "Responsiveness", "RigidityEnabled" },
@@ -2171,7 +2171,7 @@ local function Ser(V, Refs)
     end
     if T == "BrickColor" then return string.format('BrickColor.new("%s")', V.Name) end
     if T == "EnumItem" then
-        local Ok, Res = pcall(tostring, V)
+        local Ok, Res = pcall(function() return tostring(V) end)
         if Ok then return Res end
         return "nil"
     end
