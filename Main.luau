@@ -1781,9 +1781,9 @@ local function Build(Target)
     end
 
     for Idx, Inst in ipairs(Instances) do
-        local P = Inst.Parent
-        if P then
-            local Path = GetPath(P, Refs)
+        local Parent = Inst.Parent
+        if Parent then
+            local Path = GetPath(Parent, Refs)
             if Path ~= "nil" then
                 P("pcall(_p,o[%d],%s)", Idx, Path)
             end
