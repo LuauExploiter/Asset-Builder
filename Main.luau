@@ -78,6 +78,14 @@ local SkipProperties = {
     DataSource = true,
     IsDragged = true,
     Dimensions = true,
+    BackSurfaceInput = true,
+    BottomSurfaceInput = true,
+    FrontSurfaceInput = true,
+    LeftSurfaceInput = true,
+    RightSurfaceInput = true,
+    TopSurfaceInput = true,
+    Shiny = true,
+    Specular = true,
 }
 
 local FallbackProperties = {}
@@ -90,9 +98,7 @@ FallbackProperties["Instance"] = {
 FallbackProperties["BasePart"] = {
     Anchored = false,
     BackSurface = Enum.SurfaceType.Smooth,
-    BackSurfaceInput = Enum.InputType.NoInput,
     BottomSurface = Enum.SurfaceType.Smooth,
-    BottomSurfaceInput = Enum.InputType.NoInput,
     CFrame = CFrame.new(),
     CanCollide = true,
     CanQuery = true,
@@ -103,9 +109,7 @@ FallbackProperties["BasePart"] = {
     CustomPhysicalProperties = PhysicalProperties.new(0.7, 0.3, 0.5, 0.1, 0.1),
     EnableFluidForces = true,
     FrontSurface = Enum.SurfaceType.Smooth,
-    FrontSurfaceInput = Enum.InputType.NoInput,
     LeftSurface = Enum.SurfaceType.Smooth,
-    LeftSurfaceInput = Enum.InputType.NoInput,
     Locked = false,
     Massless = false,
     Material = Enum.Material.SmoothPlastic,
@@ -115,17 +119,14 @@ FallbackProperties["BasePart"] = {
     Position = Vector3.new(),
     Reflectance = 0,
     RightSurface = Enum.SurfaceType.Smooth,
-    RightSurfaceInput = Enum.InputType.NoInput,
     RootPriority = 0,
     Rotation = Vector3.new(),
     Size = Vector3.new(4, 1, 2),
     TopSurface = Enum.SurfaceType.Smooth,
-    TopSurfaceInput = Enum.InputType.NoInput,
     Transparency = 0,
 }
 
 FallbackProperties["FormFactorPart"] = {
-    FormFactor = Enum.FormFactor.Custom,
 }
 
 FallbackProperties["Part"] = {
@@ -139,7 +140,6 @@ FallbackProperties["CornerWedgePart"] = {
 }
 
 FallbackProperties["TrussPart"] = {
-    Style = Enum.TrussStyle.Alternating,
 }
 
 FallbackProperties["SpawnLocation"] = {
@@ -223,8 +223,6 @@ FallbackProperties["FileMesh"] = {
 FallbackProperties["Decal"] = {
     Color3 = Color3.new(1, 1, 1),
     Face = Enum.NormalId.Front,
-    Shiny = 0,
-    Specular = 0,
     Texture = "",
     Transparency = 0,
     ZIndex = 0,
@@ -235,8 +233,6 @@ FallbackProperties["Texture"] = {
     Face = Enum.NormalId.Front,
     OffsetStudsU = 0,
     OffsetStudsV = 0,
-    Shiny = 0,
-    Specular = 0,
     StudsPerTileU = 2,
     StudsPerTileV = 2,
     Texture = "",
@@ -379,7 +375,6 @@ FallbackProperties["BodyColors"] = {
 
 FallbackProperties["CharacterMesh"] = {
     BaseTextureId = 0,
-    BodyPart = Enum.BodyPart.Head,
     MeshId = 0,
     OverlayTextureId = 0,
 }
@@ -1829,7 +1824,6 @@ FallbackProperties["StarterPlayer"] = {
     DevTouchCameraMovementMode = Enum.DevTouchCameraMovementMode.Watch,
     EnableMouseLockOption = false,
     MouseIconEnabled = true,
-    UserInputTouchData = nil,
 }
 
 FallbackProperties["StarterPlayerScripts"] = {
@@ -1841,7 +1835,6 @@ FallbackProperties["LocalizationService"] = {
 
 FallbackProperties["Chat"] = {
     BubbleChatEnabled = false,
-    Callbacks = {},
     TypingIndicator = false,
 }
 
@@ -2064,22 +2057,19 @@ local Inheritance = {
 local ExactPropertyHints = {
     Instance = { "Name" },
     BasePart = {
-        "Anchored", "BackSurface", "BackSurfaceInput", "BottomSurface",
-        "BottomSurfaceInput", "CFrame", "CanCollide", "CanQuery", "CanTouch",
+        "Anchored", "BackSurface", "BottomSurface", "CFrame", "CanCollide", "CanQuery", "CanTouch",
         "CastShadow", "CollisionGroup", "Color", "CustomPhysicalProperties",
-        "EnableFluidForces", "FrontSurface", "FrontSurfaceInput", "LeftSurface",
-        "LeftSurfaceInput", "Locked", "Massless", "Material", "MaterialVariant",
+        "EnableFluidForces", "FrontSurface", "LeftSurface", "Locked", "Massless", "Material", "MaterialVariant",
         "Orientation", "PivotOffset", "Position", "Reflectance", "RightSurface",
-        "RightSurfaceInput", "RootPriority", "Rotation", "Size", "TopSurface",
-        "TopSurfaceInput", "Transparency",
+        "RootPriority", "Rotation", "Size", "TopSurface", "Transparency",
     },
     Part = { "Shape" },
     MeshPart = { "CollisionFidelity", "DoubleSided", "MeshId", "MeshSize", "RenderFidelity", "TextureID" },
     PartOperation = { "CollisionFidelity", "RenderFidelity", "SmoothingAngle", "UsePartColor" },
     SpecialMesh = { "MeshId", "MeshType", "Offset", "RotationOffset", "Scale", "TextureId", "VertexColor" },
     FileMesh = { "MeshId", "Offset", "Scale", "TextureId", "VertexColor" },
-    Decal = { "Color3", "Face", "Shiny", "Specular", "Texture", "Transparency", "ZIndex" },
-    Texture = { "Color3", "Face", "OffsetStudsU", "OffsetStudsV", "Shiny", "Specular", "StudsPerTileU", "StudsPerTileV", "Texture", "Transparency", "ZIndex" },
+    Decal = { "Color3", "Face", "Texture", "Transparency", "ZIndex" },
+    Texture = { "Color3", "Face", "OffsetStudsU", "OffsetStudsV", "StudsPerTileU", "StudsPerTileV", "Texture", "Transparency", "ZIndex" },
     SurfaceAppearance = { "AlphaMode", "Color", "ColorMap", "Metalness", "MetalnessMap", "NormalMap", "Roughness", "RoughnessMap", "TexturePack" },
     Model = { "LevelOfDetail", "ModelStreamingMode", "PrimaryPart", "WorldPivot" },
     Tool = { "CanBeDropped", "Enabled", "Grip", "GripForward", "GripPos", "GripRight", "GripUp", "ManualActivationOnly", "RequiresHandle", "ToolTip" },
@@ -2180,7 +2170,11 @@ local function Ser(V, Refs)
         return string.format("UDim.new(%s,%d)", Num(V.Scale), V.Offset)
     end
     if T == "BrickColor" then return string.format('BrickColor.new("%s")', V.Name) end
-    if T == "EnumItem" then return tostring(V) end
+    if T == "EnumItem" then
+        local Ok, Res = pcall(tostring, V)
+        if Ok then return Res end
+        return "nil"
+    end
     if T == "NumberRange" then return (V.Min == V.Max) and string.format("NumberRange.new(%s)", Num(V.Min)) or string.format("NumberRange.new(%s,%s)", Num(V.Min), Num(V.Max)) end
     if T == "PhysicalProperties" then return string.format("PhysicalProperties.new(%s,%s,%s,%s,%s)", Num(V.Density), Num(V.Friction), Num(V.Elasticity), Num(V.FrictionWeight), Num(V.ElasticityWeight)) end
     if T == "NumberSequence" then
