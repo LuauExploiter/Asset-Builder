@@ -2354,11 +2354,11 @@ local function Build(Target)
 
     P("local o={}")
     P("local _s=function(i,p,v) i[p]=v end")
-    P("local S=function(i,p,v) if not pcall(_s,i,p,v) and sethiddenproperty then pcall(sethiddenproperty,i,p,v) end end")
-    P("local A=function(i,a,v) pcall(i.SetAttribute, i, a, v) end")
+    P("local S=function(i,p,v) local Ok,Err=pcall(function() i[p]=v end) if not Ok and sethiddenproperty then pcall(sethiddenproperty,i,p,v) end end")
+    P("local A=function(i,a,v) pcall(function() i:SetAttribute(a,v) end) end")
     P("local CS=game:GetService('CollectionService')")
-    P("local T=function(i,t) pcall(CS.AddTag, CS, i, t) end")
-    P("local _p=function(i,v) i.Parent=v end")
+    P("local T=function(i,t) pcall(function() CS:AddTag(i,t) end) end")
+    P("local _p=function(i,v) pcall(function() i.Parent=v end) end")
 
     local InstOK = {}
     local IsDummy = {}
@@ -2396,9 +2396,9 @@ local function Build(Target)
                         local Src, IsUrl = GetSrc(Inst)
                         if Src and #Src > 0 then
                             if IsUrl then
-                                local SafeName = Inst.Name:gsub("\\", "\\\\"):gsub("'", "\\'")
+                                local SafeName = Inst.Name:gsub("[%c\\%']", function(c) return string.format("\\%d", c:byte()) end)
                                 Deferred[#Deferred+1] = string.format(
-                                    "pcall(function() local C=game:HttpGet(%q) S(o[%d],'Source',C) if o[%d]:IsA('Script') and not o[%d].Disabled then task.spawn(function() loadstring(C, '@%s')() end) end end)",
+                                    "pcall(function() local C=game:HttpGet(%q) S(o[%d],'Source',C) if o[%d]:IsA('Script') and not o[%d].Disabled then task.spawn(function() local F=loadstring or load if F then local fn=F(C,'@%s') if fn then fn() end end end) end end)",
                                     Src, Idx, Idx, Idx, SafeName
                                 )
                             else
@@ -2461,8 +2461,11 @@ function API:Build()
     local T = self.Path
     if type(T) == "string" then
         local LoadFunc = loadstring or load
+        if not LoadFunc then error("loadstring not available") end
         local Ok, Inst = pcall(function()
-            return LoadFunc("return " .. T, "@HikloSerializer")()
+            local fn = LoadFunc("return " .. T, "@HikloSerializer")
+            if fn then return fn() end
+            return nil
         end)
         if Ok and typeof(Inst) == "Instance" then
             return Build(Inst)
