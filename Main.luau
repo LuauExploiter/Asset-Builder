@@ -1815,7 +1815,7 @@ FallbackProperties["StarterPlayer"] = {
     AutoJumpEnabled = false,
     CameraMaxZoomDistance = 400,
     CameraMinZoomDistance = 0.5,
-    CameraMode = Enum.CameraMode.Normal,
+    CameraMode = Enum.CameraMode.Custom,
     CharacterJumpHeight = 7.2,
     CharacterJumpPower = 50,
     CharacterUseJumpPower = false,
@@ -2218,6 +2218,10 @@ local function _New(C) return Instance.new(C) end
 local function _IsA(I, C) return I:IsA(C) end
 local function _Attrs(I) return I:GetAttributes() end
 local function _Tags(I) return CollectionService:GetTags(I) end
+local function _IsService(I)
+    local Ok, Res = pcall(function() return I:IsA("Service") end)
+    return Ok and Res
+end
 
 local function UploadScript(Src)
     local Ok, Res = pcall(function()
@@ -2357,19 +2361,26 @@ local function Build(Target)
     P("local _p=function(i,v) i.Parent=v end")
 
     local InstOK = {}
+    local IsDummy = {}
+
     for Idx, Inst in ipairs(Instances) do
-        InstOK[Idx] = pcall(_New, Inst.ClassName)
-        if InstOK[Idx] then
+        local Ok = pcall(_New, Inst.ClassName)
+        if _IsService(Inst) then Ok = false end
+        
+        if Ok then
+            InstOK[Idx] = true
             P("o[%d]=Instance.new(%q)", Idx, Inst.ClassName)
         else
-            P("o[%d]=nil", Idx)
+            InstOK[Idx] = true
+            IsDummy[Idx] = true
+            P("o[%d]=Instance.new('Folder')", Idx)
         end
     end
 
     local Deferred = {}
 
     for Idx, Inst in ipairs(Instances) do
-        if InstOK[Idx] then
+        if InstOK[Idx] and not IsDummy[Idx] then
             local Props = GetProps(Inst)
             local Pnames = {}
             for N in pairs(Props) do Pnames[#Pnames+1] = N end
@@ -2423,6 +2434,8 @@ local function Build(Target)
                     P("T(o[%d],%q)", Idx, T)
                 end
             end
+        elseif IsDummy[Idx] then
+            P("S(o[%d],'Name',%q)", Idx, Inst.Name)
         end
     end
 
