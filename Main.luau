@@ -91,6 +91,8 @@ local SkipProperties = {
     ShapeRotation = true,
     ShapeStyle = true,
     CameraMode = true,
+    DevCameraOcclusionMode = true,
+    DevTouchCameraMovementMode = true,
 }
 
 local FallbackProperties = {}
@@ -1820,8 +1822,6 @@ FallbackProperties["StarterPlayer"] = {
     CharacterJumpPower = 50,
     CharacterUseJumpPower = false,
     CharacterWalkSpeed = 16,
-    DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom,
-    DevTouchCameraMovementMode = Enum.DevTouchCameraMovementMode.Watch,
     EnableMouseLockOption = false,
     MouseIconEnabled = true,
 }
