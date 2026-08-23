@@ -1673,6 +1673,8 @@ local function Build(Target)
     P("local CS=game:GetService('CollectionService')")
     P("local T=function(i,t) pcall(function() CS:AddTag(i,t) end) end")
     P("local _p=function(i,v) pcall(function() i.Parent=v end) end")
+    P("local _L=loadstring or load")
+    P("local function RunCode(C, Name) if _L then local fn = _L(C, Name or '@Script') if fn then fn() end end end")
 
     local InstOK = {}
     local IsDummy = {}
@@ -1710,13 +1712,13 @@ local function Build(Target)
                         local Src, IsUrl = GetSrc(Inst)
                         if Src and #Src > 0 then
                             if IsUrl then
-                                local SafeName = Inst.Name:gsub("[%c\\%']", function(c) return string.format("\\%d", c:byte()) end)
+                                local SafeName = Inst.Name:gsub("[%c\\%']%[%]%,]", function(c) return string.format("\\%d", c:byte()) end)
                                 Deferred[#Deferred+1] = string.format(
-                                    "pcall(function() local C=game:HttpGet(%q) S(o[%d],'Source',C) if o[%d]:IsA('Script') and not o[%d].Disabled then task.spawn(function() local F=loadstring or load if F then local fn, err = F(C, '@%s') if fn then fn() end end end) end end)",
+                                    "pcall(function() local C=game:HttpGet(%q) S(o[%d],'Source',C) if o[%d]:IsA('Script') and not o[%d].Disabled then task.spawn(function() RunCode(C, '@%s') end) end end)",
                                     Src, Idx, Idx, Idx, SafeName
                                 )
                             else
-                                Deferred[#Deferred+1] = string.format("S(o[%d],'Source',%q)", Idx, Src)
+                                Deferred[#Deferred+1] = string.format("S(o[%d],'Source',[==[%s]==])", Idx, Src)
                             end
                         end
                     else
@@ -1766,7 +1768,7 @@ local function Build(Target)
     end
 
     P("return o[1]")
-    return table.concat(Out, ";")
+    return table.concat(Out, "\n")
 end
 
 local API = {}
