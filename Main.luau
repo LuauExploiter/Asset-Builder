@@ -1,6 +1,21 @@
 local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 
+-- SafeEnum wrapper to prevent executor crashes on missing Enums
+local SafeEnum = setmetatable({}, {
+    __index = function(t, k)
+        local Ok, Res = pcall(function() return Enum[k] end)
+        if not Ok or not Res then return nil end
+        return setmetatable({}, {
+            __index = function(t2, k2)
+                local Ok2, Res2 = pcall(function() return Res[k2] end)
+                if not Ok2 or not Res2 then return nil end
+                return Res2
+            end
+        })
+    end
+})
+
 local SkipProperties = {
     Parent = true, 
     ClassName = true, 
@@ -86,13 +101,11 @@ local SkipProperties = {
     TopSurfaceInput = true,
     Shiny = true,
     Specular = true,
-    ShapeInOut = true,
-    ShapePartial = true,
-    ShapeRotation = true,
-    ShapeStyle = true,
-    CameraMode = true,
-    DevCameraOcclusionMode = true,
-    DevTouchCameraMovementMode = true,
+    WorldCFrame = true, 
+    WorldPosition = true, 
+    WorldOrientation = true,
+    WorldAxis = true, 
+    WorldSecondaryAxis = true,
 }
 
 local FallbackProperties = {}
@@ -104,8 +117,8 @@ FallbackProperties["Instance"] = {
 
 FallbackProperties["BasePart"] = {
     Anchored = false,
-    BackSurface = Enum.SurfaceType.Smooth,
-    BottomSurface = Enum.SurfaceType.Smooth,
+    BackSurface = SafeEnum.SurfaceType.Smooth,
+    BottomSurface = SafeEnum.SurfaceType.Smooth,
     CFrame = CFrame.new(),
     CanCollide = true,
     CanQuery = true,
@@ -115,26 +128,26 @@ FallbackProperties["BasePart"] = {
     Color = Color3.new(0.639216, 0.635294, 0.647059),
     CustomPhysicalProperties = PhysicalProperties.new(0.7, 0.3, 0.5, 0.1, 0.1),
     EnableFluidForces = true,
-    FrontSurface = Enum.SurfaceType.Smooth,
-    LeftSurface = Enum.SurfaceType.Smooth,
+    FrontSurface = SafeEnum.SurfaceType.Smooth,
+    LeftSurface = SafeEnum.SurfaceType.Smooth,
     Locked = false,
     Massless = false,
-    Material = Enum.Material.SmoothPlastic,
+    Material = SafeEnum.Material.SmoothPlastic,
     MaterialVariant = "",
     Orientation = Vector3.new(),
     PivotOffset = CFrame.new(),
     Position = Vector3.new(),
     Reflectance = 0,
-    RightSurface = Enum.SurfaceType.Smooth,
+    RightSurface = SafeEnum.SurfaceType.Smooth,
     RootPriority = 0,
     Rotation = Vector3.new(),
     Size = Vector3.new(4, 1, 2),
-    TopSurface = Enum.SurfaceType.Smooth,
+    TopSurface = SafeEnum.SurfaceType.Smooth,
     Transparency = 0,
 }
 
 FallbackProperties["FormFactorPart"] = {}
-FallbackProperties["Part"] = { Shape = Enum.PartType.Block }
+FallbackProperties["Part"] = { Shape = SafeEnum.PartType.Block }
 FallbackProperties["WedgePart"] = {}
 FallbackProperties["CornerWedgePart"] = {}
 FallbackProperties["TrussPart"] = {}
@@ -145,7 +158,7 @@ FallbackProperties["SpawnLocation"] = {
     Enabled = true,
     Neutral = true,
     TeamColor = BrickColor.new("White"),
-    Shape = Enum.PartType.Block,
+    Shape = SafeEnum.PartType.Block,
 }
 
 FallbackProperties["Platform"] = {}
@@ -163,17 +176,17 @@ FallbackProperties["VehicleSeat"] = {
 }
 
 FallbackProperties["MeshPart"] = {
-    CollisionFidelity = Enum.CollisionFidelity.Default,
+    CollisionFidelity = SafeEnum.CollisionFidelity.Default,
     DoubleSided = false,
     MeshId = "",
     MeshSize = Vector3.new(1, 1, 1),
-    RenderFidelity = Enum.RenderFidelity.Automatic,
+    RenderFidelity = SafeEnum.RenderFidelity.Automatic,
     TextureID = "",
 }
 
 FallbackProperties["PartOperation"] = {
-    CollisionFidelity = Enum.CollisionFidelity.Default,
-    RenderFidelity = Enum.RenderFidelity.Automatic,
+    CollisionFidelity = SafeEnum.CollisionFidelity.Default,
+    RenderFidelity = SafeEnum.RenderFidelity.Automatic,
     SmoothingAngle = 30,
     UsePartColor = false,
 }
@@ -184,7 +197,7 @@ FallbackProperties["IntersectOperation"] = FallbackProperties["PartOperation"]
 
 FallbackProperties["SpecialMesh"] = {
     MeshId = "",
-    MeshType = Enum.MeshType.Head,
+    MeshType = SafeEnum.MeshType.Head,
     Offset = Vector3.new(),
     RotationOffset = Vector3.new(),
     Scale = Vector3.new(1, 1, 1),
@@ -205,7 +218,7 @@ FallbackProperties["FileMesh"] = {
 
 FallbackProperties["Decal"] = {
     Color3 = Color3.new(1, 1, 1),
-    Face = Enum.NormalId.Front,
+    Face = SafeEnum.NormalId.Front,
     Texture = "",
     Transparency = 0,
     ZIndex = 0,
@@ -213,7 +226,7 @@ FallbackProperties["Decal"] = {
 
 FallbackProperties["Texture"] = {
     Color3 = Color3.new(1, 1, 1),
-    Face = Enum.NormalId.Front,
+    Face = SafeEnum.NormalId.Front,
     OffsetStudsU = 0,
     OffsetStudsV = 0,
     StudsPerTileU = 2,
@@ -224,7 +237,7 @@ FallbackProperties["Texture"] = {
 }
 
 FallbackProperties["SurfaceAppearance"] = {
-    AlphaMode = Enum.AlphaMode.Overlay,
+    AlphaMode = SafeEnum.AlphaMode.Overlay,
     Color = Color3.new(1, 1, 1),
     ColorMap = "",
     Metalness = 0,
@@ -236,8 +249,8 @@ FallbackProperties["SurfaceAppearance"] = {
 }
 
 FallbackProperties["Model"] = {
-    LevelOfDetail = Enum.ModelLevelOfDetail.Disabled,
-    ModelStreamingMode = Enum.ModelStreamingMode.Default,
+    LevelOfDetail = SafeEnum.ModelLevelOfDetail.Disabled,
+    ModelStreamingMode = SafeEnum.ModelStreamingMode.Default,
     PrimaryPart = nil,
     WorldPivot = CFrame.new(),
 }
@@ -268,11 +281,11 @@ FallbackProperties["Hat"] = {
 }
 
 FallbackProperties["Accessory"] = {
-    AccessoryType = Enum.AccessoryType.Hat,
+    AccessoryType = SafeEnum.AccessoryType.Hat,
     AttachmentPoint = CFrame.new(),
 }
 
-FallbackProperties["Script"] = { Disabled = false, RunContext = Enum.RunContext.Legacy, Source = "" }
+FallbackProperties["Script"] = { Disabled = false, RunContext = SafeEnum.RunContext.Legacy, Source = "" }
 FallbackProperties["LocalScript"] = { Disabled = false, Source = "" }
 FallbackProperties["ModuleScript"] = { Source = "" }
 
@@ -307,7 +320,7 @@ FallbackProperties["Shirt"] = { ShirtTemplate = "" }
 FallbackProperties["ShirtGraphic"] = { Color3 = Color3.new(1, 1, 1), Graphic = "" }
 
 FallbackProperties["WrapLayer"] = {
-    AutoSkin = Enum.WrapLayerAutoSkin.Disabled,
+    AutoSkin = SafeEnum.WrapLayerAutoSkin.Disabled,
     BindOffset = CFrame.new(),
     Color = BrickColor.new("Bright blue"),
     DebugHeatmap = false,
@@ -338,7 +351,7 @@ FallbackProperties["IKControl"] = {
     Priority = 0,
     SmoothTime = 0,
     Target = nil,
-    Type = Enum.IKControlType.Transform,
+    Type = SafeEnum.IKControlType.Transform,
     Weight = 1,
 }
 
@@ -352,7 +365,7 @@ FallbackProperties["Sound"] = {
     PlaybackSpeed = 1,
     RollOffMaxDistance = 10000,
     RollOffMinDistance = 10,
-    RollOffMode = Enum.RollOffMode.InverseTapered,
+    RollOffMode = SafeEnum.RollOffMode.InverseTapered,
     SoundGroup = nil,
     SoundId = "",
     TimePosition = 0,
@@ -360,11 +373,11 @@ FallbackProperties["Sound"] = {
 }
 
 FallbackProperties["SoundService"] = {
-    AmbientReverb = Enum.ReverbType.NoReverb,
+    AmbientReverb = SafeEnum.ReverbType.NoReverb,
     DistanceFactor = 3.33,
     DopplerScale = 1,
     RespectFilteringEnabled = true,
-    VolumetricAudio = Enum.VolumetricAudio.Disabled,
+    VolumetricAudio = SafeEnum.VolumetricAudio.Disabled,
 }
 
 FallbackProperties["EqualizerSoundEffect"] = { HighGain = 0, LowGain = 0, MidGain = 0, Priority = 0 }
@@ -439,7 +452,7 @@ FallbackProperties["Beam"] = {
     Segments = 10,
     Texture = "",
     TextureLength = 1,
-    TextureMode = Enum.TextureMode.Stretch,
+    TextureMode = SafeEnum.TextureMode.Stretch,
     TextureSpeed = 1,
     Transparency = NumberSequence.new(0),
     Width0 = 1,
@@ -461,7 +474,7 @@ FallbackProperties["Trail"] = {
     MinLength = 0,
     Texture = "",
     TextureLength = 1,
-    TextureMode = Enum.TextureMode.Stretch,
+    TextureMode = SafeEnum.TextureMode.Stretch,
     Transparency = NumberSequence.new(0),
     WidthScale = NumberSequence.new(1),
 }
@@ -471,20 +484,24 @@ FallbackProperties["ParticleEmitter"] = {
     Brightness = 1,
     Color = ColorSequence.new(Color3.new(1, 1, 1)),
     Drag = 0,
-    EmissionDirection = Enum.NormalId.Top,
+    EmissionDirection = SafeEnum.NormalId.Top,
     Enabled = true,
     FlipbookFramerate = NumberRange.new(30),
     FlipbookIncompatible = "",
-    FlipbookLayout = Enum.ParticleFlipbookLayout.None,
-    FlipbookMode = Enum.ParticleFlipbookMode.Loop,
+    FlipbookLayout = SafeEnum.ParticleFlipbookLayout.None,
+    FlipbookMode = SafeEnum.ParticleFlipbookMode.Loop,
     LifeTime = NumberRange.new(5, 10),
     LightEmission = 0,
     LightInfluence = 1,
     LockedToPart = false,
-    Orientation = Enum.ParticleOrientation.FacingCamera,
+    Orientation = SafeEnum.ParticleOrientation.FacingCamera,
     Rate = 20,
     RotSpeed = NumberRange.new(0),
     Rotation = NumberRange.new(0),
+    ShapeInOut = SafeEnum.ParticleEmitterShapeInOut.Out,
+    ShapePartial = SafeEnum.ParticleEmitterShapePartial.Full,
+    ShapeRotation = 0,
+    ShapeStyle = SafeEnum.ParticleEmitterShapeStyle.Volume,
     Size = NumberSequence.new(1),
     Speed = NumberRange.new(5),
     SpreadAngle = Vector2.new(),
@@ -551,7 +568,7 @@ FallbackProperties["SpringConstraint"] = {
 }
 
 FallbackProperties["HingeConstraint"] = {
-    ActuatorType = Enum.ActuatorType.None,
+    ActuatorType = SafeEnum.ActuatorType.None,
     Attachment0 = nil,
     Attachment1 = nil,
     AngularResponsiveness = 20,
@@ -588,7 +605,7 @@ FallbackProperties["BallSocketConstraint"] = {
 }
 
 FallbackProperties["CylindricalConstraint"] = {
-    AngularActuatorType = Enum.ActuatorType.None,
+    AngularActuatorType = SafeEnum.ActuatorType.None,
     AngularLimitsEnabled = false,
     AngularResponsiveness = 20,
     AngularSpeed = 45,
@@ -598,7 +615,7 @@ FallbackProperties["CylindricalConstraint"] = {
     Color = BrickColor.new("Bright blue"),
     Enabled = true,
     InclinationAngle = 0,
-    LinearActuatorType = Enum.ActuatorType.None,
+    LinearActuatorType = SafeEnum.ActuatorType.None,
     LinearLimitsEnabled = false,
     LinearResponsiveness = 20,
     LinearSpeed = 2,
@@ -621,7 +638,7 @@ FallbackProperties["CylindricalConstraint"] = {
 }
 
 FallbackProperties["PrismaticConstraint"] = {
-    ActuatorType = Enum.ActuatorType.None,
+    ActuatorType = SafeEnum.ActuatorType.None,
     Attachment0 = nil,
     Attachment1 = nil,
     Color = BrickColor.new("Bright blue"),
@@ -673,17 +690,17 @@ FallbackProperties["LinearVelocityConstraint"] = {
     Attachment1 = nil,
     Color = BrickColor.new("Bright blue"),
     Enabled = true,
-    ForceLimitMode = Enum.ForceLimitMode.Magnitude,
+    ForceLimitMode = SafeEnum.ForceLimitMode.Magnitude,
     LineDirection = Vector3.new(0, 1, 0),
     LineVelocity = 0,
     MaxAxesForce = Vector3.new(math.huge, math.huge, math.huge),
     MaxForce = math.huge,
     PlaneVelocity = Vector2.new(),
     PrimaryTangentAxis = Vector3.new(1, 0, 0),
-    RelativeTo = Enum.ActuatorRelativeTo.Attachment0,
+    RelativeTo = SafeEnum.ActuatorRelativeTo.Attachment0,
     SecondaryTangentAxis = Vector3.new(0, 0, 1),
     VectorVelocity = Vector3.new(),
-    VelocityConstraintMode = Enum.VelocityConstraintMode.Vector,
+    VelocityConstraintMode = SafeEnum.VelocityConstraintMode.Vector,
     Visible = false,
 }
 
@@ -695,7 +712,7 @@ FallbackProperties["AngularVelocityConstraint"] = {
     Enabled = true,
     MaxTorque = math.huge,
     ReactionTorqueEnabled = false,
-    RelativeTo = Enum.ActuatorRelativeTo.Attachment0,
+    RelativeTo = SafeEnum.ActuatorRelativeTo.Attachment0,
     Visible = false,
 }
 
@@ -705,11 +722,11 @@ FallbackProperties["AlignPosition"] = {
     Attachment1 = nil,
     Color = BrickColor.new("Bright blue"),
     Enabled = true,
-    ForceLimitMode = Enum.ForceLimitMode.Magnitude,
+    ForceLimitMode = SafeEnum.ForceLimitMode.Magnitude,
     MaxAxesForce = Vector3.new(math.huge, math.huge, math.huge),
     MaxForce = math.huge,
     MaxVelocity = math.huge,
-    Mode = Enum.PositionAlignmentMode.TwoAttachment,
+    Mode = SafeEnum.PositionAlignmentMode.TwoAttachment,
     Position = Vector3.new(),
     ReactionForceEnabled = false,
     Responsiveness = 200,
@@ -725,7 +742,7 @@ FallbackProperties["AlignOrientation"] = {
     Enabled = true,
     MaxAngularVelocity = math.huge,
     MaxTorque = math.huge,
-    Mode = Enum.OrientationAlignmentMode.TwoAttachment,
+    Mode = SafeEnum.OrientationAlignmentMode.TwoAttachment,
     PrimaryAxis = Vector3.new(0, 1, 0),
     PrimaryAxisOnly = false,
     ReactionTorqueEnabled = false,
@@ -757,7 +774,7 @@ FallbackProperties["Glue"] = { C0 = CFrame.new(), C1 = CFrame.new(), Part0 = nil
 FallbackProperties["RigidConstraint"] = { Attachment0 = nil, Attachment1 = nil, Enabled = true, Visible = false }
 
 FallbackProperties["SliderConstraint"] = {
-    ActuatorType = Enum.ActuatorType.None,
+    ActuatorType = SafeEnum.ActuatorType.None,
     Attachment0 = nil,
     Attachment1 = nil,
     Color = BrickColor.new("Bright blue"),
@@ -795,8 +812,8 @@ FallbackProperties["RocketPropulsion"] = {
 }
 
 FallbackProperties["PointLight"] = { Brightness = 1, Color = Color3.new(1, 1, 1), Enabled = true, Range = 16, Shadows = false }
-FallbackProperties["SpotLight"] = { Angle = 45, Brightness = 1, Color = Color3.new(1, 1, 1), Enabled = true, Face = Enum.NormalId.Front, Range = 16, Shadows = false }
-FallbackProperties["SurfaceLight"] = { Angle = 90, Brightness = 1, Color = Color3.new(1, 1, 1), Enabled = true, Face = Enum.NormalId.Front, Range = 16, Shadows = false }
+FallbackProperties["SpotLight"] = { Angle = 45, Brightness = 1, Color = Color3.new(1, 1, 1), Enabled = true, Face = SafeEnum.NormalId.Front, Range = 16, Shadows = false }
+FallbackProperties["SurfaceLight"] = { Angle = 90, Brightness = 1, Color = Color3.new(1, 1, 1), Enabled = true, Face = SafeEnum.NormalId.Front, Range = 16, Shadows = false }
 
 FallbackProperties["Atmosphere"] = {
     Color = Color3.fromRGB(199, 199, 199),
@@ -834,13 +851,13 @@ FallbackProperties["ProximityPrompt"] = {
     AutoLocalize = true,
     ClickablePrompt = true,
     Enabled = true,
-    GamepadKeyCode = Enum.KeyCode.ButtonX,
+    GamepadKeyCode = SafeEnum.KeyCode.ButtonX,
     HoldDuration = 0,
-    KeyboardKeyCode = Enum.KeyCode.E,
+    KeyboardKeyCode = SafeEnum.KeyCode.E,
     MaxActivationDistance = 10,
     ObjectText = "",
     RequiresLineOfSight = true,
-    Style = Enum.ProximityPromptStyle.Default,
+    Style = SafeEnum.ProximityPromptStyle.Default,
     UIOffset = Vector2.new(),
 }
 
@@ -850,14 +867,14 @@ FallbackProperties["PathfindingModifier"] = { IsBlocked = false, Label = "", Pas
 FallbackProperties["PathfindingLink"] = { Attachment0 = nil, Attachment1 = nil, Bidirectional = true, Label = "" }
 
 FallbackProperties["Dialog"] = {
-    BehaviorType = Enum.DialogBehaviorType.SinglePlayer,
+    BehaviorType = SafeEnum.DialogBehaviorType.SinglePlayer,
     ConversationDistance = 25,
     Enabled = true,
     GoodbyeChoiceActive = false,
     GoodbyeDialog = "",
     InitialPrompt = "",
-    Purpose = Enum.DialogPurpose.Help,
-    Tone = Enum.DialogTone.Neutral,
+    Purpose = SafeEnum.DialogPurpose.Help,
+    Tone = SafeEnum.DialogTone.Neutral,
 }
 
 FallbackProperties["DialogChoice"] = {
@@ -872,18 +889,18 @@ FallbackProperties["Humanoid"] = {
     AutoRotate = true,
     BreakJointsOnDeath = true,
     CameraOffset = Vector3.new(),
-    DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Viewer,
+    DisplayDistanceType = SafeEnum.HumanoidDisplayDistanceType.Viewer,
     HealthDisplayDistance = 100,
-    HealthDisplayType = Enum.HumanoidHealthDisplayType.DisplayWhenDamaged,
+    HealthDisplayType = SafeEnum.HumanoidHealthDisplayType.DisplayWhenDamaged,
     HipHeight = 0,
     JumpHeight = 7.2,
     JumpPower = 50,
     MaxHealth = 100,
     MaxSlopeAngle = 89,
     NameDisplayDistance = 100,
-    NameOcclusion = Enum.NameOcclusion.OccludeAll,
+    NameOcclusion = SafeEnum.NameOcclusion.OccludeAll,
     RequiresNeck = true,
-    RigType = Enum.HumanoidRigType.R6,
+    RigType = SafeEnum.HumanoidRigType.R6,
     UseJumpPower = false,
     WalkSpeed = 16,
 }
@@ -929,9 +946,9 @@ FallbackProperties["HumanoidDescription"] = {
 }
 
 FallbackProperties["Camera"] = {
-    CameraType = Enum.CameraType.Custom,
+    CameraType = SafeEnum.CameraType.Custom,
     FieldOfView = 70,
-    FieldOfViewMode = Enum.FieldOfViewMode.Vertical,
+    FieldOfViewMode = SafeEnum.FieldOfViewMode.Vertical,
     HeadLocked = true,
     MaxZoom = 400,
     MinZoom = 0,
@@ -951,12 +968,12 @@ FallbackProperties["ChatWindowConfiguration"] = {
     BackgroundTransparency = 0.6,
     Enabled = true,
     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
-    HorizontalAlignment = Enum.HorizontalAlignment.Left,
+    HorizontalAlignment = SafeEnum.HorizontalAlignment.Left,
     TextColor3 = Color3.new(1, 1, 1),
     TextSize = 14,
     TextStrokeColor3 = Color3.new(),
     TextStrokeTransparency = 0.75,
-    VerticalAlignment = Enum.VerticalAlignment.Bottom,
+    VerticalAlignment = SafeEnum.VerticalAlignment.Bottom,
 }
 
 FallbackProperties["BubbleChatConfiguration"] = {
@@ -983,11 +1000,11 @@ FallbackProperties["BubbleChatConfiguration"] = {
 local GuiObjectBase = {
     Active = false,
     AnchorPoint = Vector2.new(),
-    AutomaticSize = Enum.AutomaticSize.None,
+    AutomaticSize = SafeEnum.AutomaticSize.None,
     BackgroundColor3 = Color3.new(1, 1, 1),
     BackgroundTransparency = 0,
     BorderColor3 = Color3.new(0, 0, 0),
-    BorderMode = Enum.BorderMode.Outline,
+    BorderMode = SafeEnum.BorderMode.Outline,
     BorderSizePixel = 1,
     ClipsDescendants = false,
     LayoutOrder = 0,
@@ -1001,7 +1018,7 @@ local GuiObjectBase = {
     SelectionImageObject = nil,
     SelectionOrder = 0,
     Size = UDim2.fromOffset(100, 100),
-    SizeConstraint = Enum.SizeConstraint.RelativeXY,
+    SizeConstraint = SafeEnum.SizeConstraint.RelativeXY,
     Visible = true,
     ZIndex = 1,
 }
@@ -1018,10 +1035,10 @@ local TextBase = {
     TextStrokeColor3 = Color3.new(),
     TextStrokeTransparency = 1,
     TextTransparency = 0,
-    TextTruncate = Enum.TextTruncate.None,
+    TextTruncate = SafeEnum.TextTruncate.None,
     TextWrapped = false,
-    TextXAlignment = Enum.TextXAlignment.Center,
-    TextYAlignment = Enum.TextYAlignment.Center,
+    TextXAlignment = SafeEnum.TextXAlignment.Center,
+    TextYAlignment = SafeEnum.TextYAlignment.Center,
 }
 
 FallbackProperties["ScreenGui"] = {
@@ -1031,8 +1048,8 @@ FallbackProperties["ScreenGui"] = {
     IgnoreGuiInset = false,
     OnTopOfCoreBlur = false,
     ResetOnSpawn = true,
-    ScreenInsets = Enum.ScreenInsets.DeviceSafeInsets,
-    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+    ScreenInsets = SafeEnum.ScreenInsets.DeviceSafeInsets,
+    ZIndexBehavior = SafeEnum.ZIndexBehavior.Sibling,
 }
 
 FallbackProperties["BillboardGui"] = {
@@ -1049,7 +1066,7 @@ FallbackProperties["BillboardGui"] = {
     SizeOffset = Vector2.new(),
     StudsOffset = Vector3.new(),
     StudsOffsetWorldSpace = Vector3.new(),
-    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+    ZIndexBehavior = SafeEnum.ZIndexBehavior.Sibling,
 }
 
 FallbackProperties["SurfaceGui"] = {
@@ -1059,17 +1076,17 @@ FallbackProperties["SurfaceGui"] = {
     CanvasSize = Vector2.new(800, 600),
     ClipsDescendants = false,
     Enabled = true,
-    Face = Enum.NormalId.Front,
+    Face = SafeEnum.NormalId.Front,
     LightInfluence = 1,
     PixelsPerStud = 20,
-    SizingMode = Enum.SurfaceGuiSizingMode.FixedSize,
-    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+    SizingMode = SafeEnum.SurfaceGuiSizingMode.FixedSize,
+    ZIndexBehavior = SafeEnum.ZIndexBehavior.Sibling,
 }
 
 FallbackProperties["Frame"] = { BackgroundTransparency = 0, Size = UDim2.fromOffset(100, 100) }
 FallbackProperties["TextLabel"] = { BackgroundTransparency = 1, Size = UDim2.fromOffset(200, 50), Text = "Label" }
-FallbackProperties["TextButton"] = { AutoButtonColor = true, Modal = false, Selected = false, Size = UDim2.fromOffset(200, 50), Style = Enum.ButtonStyle.Custom, Text = "Button" }
-FallbackProperties["TextBox"] = { ClearTextOnFocus = true, MultiLine = false, PlaceholderColor3 = Color3.new(0.75, 0.75, 0.75), PlaceholderText = "", ShowNativeInput = true, Text = "", TextEditable = true, TextXAlignment = Enum.TextXAlignment.Left }
+FallbackProperties["TextButton"] = { AutoButtonColor = true, Modal = false, Selected = false, Size = UDim2.fromOffset(200, 50), Style = SafeEnum.ButtonStyle.Custom, Text = "Button" }
+FallbackProperties["TextBox"] = { ClearTextOnFocus = true, MultiLine = false, PlaceholderColor3 = Color3.new(0.75, 0.75, 0.75), PlaceholderText = "", ShowNativeInput = true, Text = "", TextEditable = true, TextXAlignment = SafeEnum.TextXAlignment.Left }
 
 FallbackProperties["ImageLabel"] = {
     BackgroundTransparency = 1,
@@ -1078,8 +1095,8 @@ FallbackProperties["ImageLabel"] = {
     ImageRectOffset = Vector2.new(),
     ImageRectSize = Vector2.new(),
     ImageTransparency = 0,
-    ResampleMode = Enum.ResamplerMode.Default,
-    ScaleType = Enum.ScaleType.Stretch,
+    ResampleMode = SafeEnum.ResamplerMode.Default,
+    ScaleType = SafeEnum.ScaleType.Stretch,
     SliceCenter = Rect.new(0, 0, 0, 0),
     SliceScale = 1,
     TileSize = UDim2.fromOffset(100, 100),
@@ -1095,50 +1112,50 @@ FallbackProperties["ImageButton"] = {
     ImageTransparency = 0,
     Modal = false,
     PressedImage = "",
-    ResampleMode = Enum.ResamplerMode.Default,
-    ScaleType = Enum.ScaleType.Stretch,
+    ResampleMode = SafeEnum.ResamplerMode.Default,
+    ScaleType = SafeEnum.ScaleType.Stretch,
     Selected = false,
     SliceCenter = Rect.new(0, 0, 0, 0),
     SliceScale = 1,
-    Style = Enum.ButtonStyle.Custom,
+    Style = SafeEnum.ButtonStyle.Custom,
     TileSize = UDim2.fromOffset(100, 100),
 }
 
 FallbackProperties["ScrollingFrame"] = {
-    AutomaticCanvasSize = Enum.AutomaticSize.None,
+    AutomaticCanvasSize = SafeEnum.AutomaticSize.None,
     BottomImage = "rbxasset://textures/ui/Scroll/scroll-bottom.png",
     CanvasPosition = Vector2.new(),
     CanvasSize = UDim2.new(0, 0, 1, 0),
     ClipsDescendants = true,
-    ElasticBehavior = Enum.ElasticBehavior.WhenScrollable,
-    HorizontalScrollBarInset = Enum.ScrollBarInset.None,
+    ElasticBehavior = SafeEnum.ElasticBehavior.WhenScrollable,
+    HorizontalScrollBarInset = SafeEnum.ScrollBarInset.None,
     MidImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
     ScrollBarImageColor3 = Color3.new(0, 0, 0),
     ScrollBarImageTransparency = 0,
     ScrollBarThickness = 12,
-    ScrollingDirection = Enum.ScrollingDirection.Y,
+    ScrollingDirection = SafeEnum.ScrollingDirection.Y,
     ScrollingEnabled = true,
     TopImage = "rbxasset://textures/ui/Scroll/scroll-top.png",
-    VerticalScrollBarInset = Enum.ScrollBarInset.None,
-    VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Right,
+    VerticalScrollBarInset = SafeEnum.ScrollBarInset.None,
+    VerticalScrollBarPosition = SafeEnum.VerticalScrollBarPosition.Right,
 }
 
 FallbackProperties["VideoFrame"] = { Looped = false, Playing = false, TimePosition = 0, Video = "", Volume = 0.5 }
 FallbackProperties["ViewportFrame"] = { Ambient = Color3.new(1, 1, 1), CurrentCamera = nil, ImageColor3 = Color3.new(1, 1, 1), ImageTransparency = 0, LightColor = Color3.new(1, 1, 1), LightDirection = Vector3.new(0, -1, -1) }
 FallbackProperties["CanvasGroup"] = { GroupColor3 = Color3.new(1, 1, 1), GroupTransparency = 0 }
 FallbackProperties["UICorner"] = { CornerRadius = UDim.new(0, 0) }
-FallbackProperties["UIStroke"] = { ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Color = Color3.new(), Enabled = true, LineJoinMode = Enum.LineJoinMode.Round, Thickness = 1, Transparency = 0 }
+FallbackProperties["UIStroke"] = { ApplyStrokeMode = SafeEnum.ApplyStrokeMode.Border, Color = Color3.new(), Enabled = true, LineJoinMode = SafeEnum.LineJoinMode.Round, Thickness = 1, Transparency = 0 }
 FallbackProperties["UIPadding"] = { PaddingBottom = UDim.new(), PaddingLeft = UDim.new(), PaddingRight = UDim.new(), PaddingTop = UDim.new() }
 
 FallbackProperties["UIListLayout"] = {
-    FillDirection = Enum.FillDirection.Vertical,
-    HorizontalAlignment = Enum.HorizontalAlignment.Left,
-    HorizontalFlex = Enum.UIFlexAlignment.None,
-    ItemLineAlignment = Enum.ItemLineAlignment.Automatic,
+    FillDirection = SafeEnum.FillDirection.Vertical,
+    HorizontalAlignment = SafeEnum.HorizontalAlignment.Left,
+    HorizontalFlex = SafeEnum.UIFlexAlignment.None,
+    ItemLineAlignment = SafeEnum.ItemLineAlignment.Automatic,
     Padding = UDim.new(),
-    SortOrder = Enum.SortOrder.LayoutOrder,
-    VerticalAlignment = Enum.VerticalAlignment.Top,
-    VerticalFlex = Enum.UIFlexAlignment.None,
+    SortOrder = SafeEnum.SortOrder.LayoutOrder,
+    VerticalAlignment = SafeEnum.VerticalAlignment.Top,
+    VerticalFlex = SafeEnum.UIFlexAlignment.None,
     Wraps = false,
 }
 
@@ -1146,41 +1163,41 @@ FallbackProperties["UIGridLayout"] = {
     CellPaddingX = UDim.new(0, 5),
     CellPaddingY = UDim.new(0, 5),
     CellSize = UDim2.fromOffset(100, 100),
-    FillDirection = Enum.FillDirection.Horizontal,
+    FillDirection = SafeEnum.FillDirection.Horizontal,
     FillDirectionMaxCells = 0,
-    HorizontalAlignment = Enum.HorizontalAlignment.Left,
-    SortOrder = Enum.SortOrder.LayoutOrder,
-    StartCorner = Enum.StartCorner.TopLeft,
-    VerticalAlignment = Enum.VerticalAlignment.Top,
+    HorizontalAlignment = SafeEnum.HorizontalAlignment.Left,
+    SortOrder = SafeEnum.SortOrder.LayoutOrder,
+    StartCorner = SafeEnum.StartCorner.TopLeft,
+    VerticalAlignment = SafeEnum.VerticalAlignment.Top,
 }
 
 FallbackProperties["UITableLayout"] = {
-    FillDirection = Enum.FillDirection.Vertical,
+    FillDirection = SafeEnum.FillDirection.Vertical,
     FillEmptySpaceColumns = false,
     FillEmptySpaceRows = false,
-    MajorAxis = Enum.TableMajorAxis.RowMajor,
+    MajorAxis = SafeEnum.TableMajorAxis.RowMajor,
     Padding = UDim2.new(),
-    SortOrder = Enum.SortOrder.LayoutOrder,
+    SortOrder = SafeEnum.SortOrder.LayoutOrder,
 }
 
 FallbackProperties["UIPageLayout"] = {
     Animated = true,
     Circular = false,
-    EasingDirection = Enum.EasingDirection.Out,
-    EasingStyle = Enum.EasingStyle.Quad,
-    FillDirection = Enum.FillDirection.Horizontal,
+    EasingDirection = SafeEnum.EasingDirection.Out,
+    EasingStyle = SafeEnum.EasingStyle.Quad,
+    FillDirection = SafeEnum.FillDirection.Horizontal,
     GamepadInputEnabled = true,
     Padding = UDim.new(),
     ScrollWheelInputEnabled = true,
-    SortOrder = Enum.SortOrder.LayoutOrder,
+    SortOrder = SafeEnum.SortOrder.LayoutOrder,
     TweenTime = 0.5,
     TouchInputEnabled = true,
 }
 
 FallbackProperties["UISizeConstraint"] = { MaxSize = Vector2.new(math.huge, math.huge), MinSize = Vector2.new() }
 FallbackProperties["UITextSizeConstraint"] = { MaxTextSize = 100, MinTextSize = 1 }
-FallbackProperties["UIAspectRatioConstraint"] = { AspectRatio = 1, AspectType = Enum.AspectType.FitWithinMaxSize, DominantAxis = Enum.DominantAxis.Width }
-FallbackProperties["UIFlexItem"] = { FlexMode = Enum.UIFlexMode.None, GrowRatio = 0, ItemLineAlignment = Enum.ItemLineAlignment.Automatic, ShrinkRatio = 0 }
+FallbackProperties["UIAspectRatioConstraint"] = { AspectRatio = 1, AspectType = SafeEnum.AspectType.FitWithinMaxSize, DominantAxis = SafeEnum.DominantAxis.Width }
+FallbackProperties["UIFlexItem"] = { FlexMode = SafeEnum.UIFlexMode.None, GrowRatio = 0, ItemLineAlignment = SafeEnum.ItemLineAlignment.Automatic, ShrinkRatio = 0 }
 FallbackProperties["UIGradient"] = { Color = ColorSequence.new(Color3.new(1, 1, 1)), Enabled = true, Offset = Vector2.new(), Rotation = 0, Transparency = NumberSequence.new(0) }
 FallbackProperties["UIScale"] = { Scale = 1 }
 
@@ -1194,14 +1211,14 @@ FallbackProperties["CylinderHandleAdornment"] = { Adornee = nil, AlwaysOnTop = f
 FallbackProperties["LineHandleAdornment"] = { Adornee = nil, AlwaysOnTop = false, Color3 = Color3.new(1, 1, 1), Length = 1, Thickness = 1, Transparency = 0, Visible = true, ZIndex = 0 }
 FallbackProperties["ImageHandleAdornment"] = { Adornee = nil, AlwaysOnTop = false, Color3 = Color3.new(1, 1, 1), Image = "", RelativeSize = 0, SizeRelativeOffset = Vector3.new(), Transparency = 0, Visible = true, ZIndex = 0 }
 FallbackProperties["ArcHandles"] = { Adornee = nil, AlwaysOnTop = false, Color3 = Color3.new(0, 0, 1), Visible = true, ZIndex = 0 }
-FallbackProperties["Handles"] = { Adornee = nil, AlwaysOnTop = false, Color3 = Color3.new(0, 0, 1), Faces = Faces.new(), Style = Enum.HandlesStyle.Resize, Visible = true, ZIndex = 0 }
+FallbackProperties["Handles"] = { Adornee = nil, AlwaysOnTop = false, Color3 = Color3.new(0, 0, 1), Faces = Faces.new(), Style = SafeEnum.HandlesStyle.Resize, Visible = true, ZIndex = 0 }
 
 FallbackProperties["SelectionPartLasso"] = { Color = BrickColor.new("Bright blue"), Humanoid = nil, Part = nil }
 FallbackProperties["SelectionPointLasso"] = { Color = BrickColor.new("Bright blue"), Humanoid = nil, Point = Vector3.new() }
 
 FallbackProperties["Highlight"] = {
     Adornee = nil,
-    DepthMode = Enum.HighlightDepthMode.AlwaysOnTop,
+    DepthMode = SafeEnum.HighlightDepthMode.AlwaysOnTop,
     Enabled = true,
     FillColor = Color3.new(1, 1, 1),
     FillTransparency = 0.5,
@@ -1218,7 +1235,7 @@ FallbackProperties["Configuration"] = {}
 FallbackProperties["MaterialService"] = { Use2022Materials = true }
 
 FallbackProperties["MaterialVariant"] = {
-    BaseMaterial = Enum.Material.SmoothPlastic,
+    BaseMaterial = SafeEnum.Material.SmoothPlastic,
     ColorMap = "",
     MetalnessMap = "",
     NormalMap = "",
@@ -1247,6 +1264,8 @@ FallbackProperties["StarterPlayer"] = {
     CharacterJumpPower = 50,
     CharacterUseJumpPower = false,
     CharacterWalkSpeed = 16,
+    DevCameraOcclusionMode = SafeEnum.DevCameraOcclusionMode.Zoom,
+    DevTouchCameraMovementMode = SafeEnum.DevTouchCameraMovementMode.Watch,
     EnableMouseLockOption = false,
     MouseIconEnabled = true,
 }
@@ -1486,7 +1505,9 @@ local function Ser(V, Refs)
     if T == "BrickColor" then return string.format('BrickColor.new("%s")', V.Name) end
     if T == "EnumItem" then
         local Ok, Res = pcall(function() return tostring(V) end)
-        if Ok then return Res end
+        if Ok then
+            return string.format("(select(2, pcall(function() return %s end)) or nil)", Res)
+        end
         return "nil"
     end
     if T == "NumberRange" then return (V.Min == V.Max) and string.format("NumberRange.new(%s)", Num(V.Min)) or string.format("NumberRange.new(%s,%s)", Num(V.Min), Num(V.Max)) end
@@ -1556,37 +1577,17 @@ local function UploadScript(Src)
     return nil
 end
 
--- FIXED: GetSrc now prefers Source, validates Lua, and doesn't upload invalid code
 local function GetSrc(Inst)
     if not pcall(_IsA, Inst, "LuaSourceContainer") then return nil, false end
-
-    local function isValidLua(code)
-        if type(code) ~= "string" or #code == 0 then return false end
-        local LoadFunc = loadstring or load
-        if LoadFunc then
-            local ok = pcall(function() LoadFunc(code) end)
-            return ok
-        end
-        return true -- cannot validate, assume valid
-    end
-
     local Src = ""
-    -- Try original Source first
-    local Ok, Res = pcall(_Get, Inst, "Source")
-    if Ok and type(Res) == "string" and #Res > 0 then
-        if isValidLua(Res) then
-            Src = Res
-        end
-    end
-
-    -- Fallback to decompile if Source missing or invalid
-    if #Src == 0 and decompile then
+    if decompile then
         local Ok, Res = pcall(decompile, Inst)
-        if Ok and type(Res) == "string" and #Res > 0 and isValidLua(Res) then
-            Src = Res
-        end
+        if Ok and type(Res) == "string" then Src = Res end
     end
-
+    if #Src == 0 then
+        local Ok, Res = pcall(_Get, Inst, "Source")
+        if Ok and type(Res) == "string" then Src = Res end
+    end
     if #Src > 0 then
         local Url = UploadScript(Src)
         if Url then
@@ -1682,23 +1683,17 @@ local function Build(Target)
     end
 
     local Out = {}
-    -- Use Emit instead of P to avoid shadowing
-    local function Emit(...)
-        local args = {...}
-        if #args == 1 then
-            Out[#Out+1] = args[1]
-        else
-            Out[#Out+1] = string.format(...)
-        end
+    local function P(...)
+        Out[#Out+1] = string.format(...)
     end
 
-    Emit("local o={}")
-    Emit("local _s=function(i,p,v) i[p]=v end")
-    Emit("local S=function(i,p,v) local Ok,Err=pcall(function() i[p]=v end) if not Ok and sethiddenproperty then pcall(function() sethiddenproperty(i,p,v) end) end end")
-    Emit("local A=function(i,a,v) pcall(function() i:SetAttribute(a,v) end) end")
-    Emit("local CS=game:GetService('CollectionService')")
-    Emit("local T=function(i,t) pcall(function() CS:AddTag(i,t) end) end")
-    Emit("local _p=function(i,v) pcall(function() i.Parent=v end) end")
+    P("local o={}")
+    P("local _s=function(i,p,v) i[p]=v end")
+    P("local S=function(i,p,v) local Ok,Err=pcall(function() i[p]=v end) if not Ok and sethiddenproperty then pcall(function() sethiddenproperty(i,p,v) end) end end")
+    P("local A=function(i,a,v) pcall(function() i:SetAttribute(a,v) end) end")
+    P("local CS=game:GetService('CollectionService')")
+    P("local T=function(i,t) pcall(function() CS:AddTag(i,t) end) end")
+    P("local _p=function(i,v) pcall(function() i.Parent=v end) end")
 
     local InstOK = {}
     local IsDummy = {}
@@ -1709,11 +1704,11 @@ local function Build(Target)
         
         if Ok then
             InstOK[Idx] = true
-            Emit("o[%d]=Instance.new(%q)", Idx, Inst.ClassName)
+            P("o[%d]=Instance.new(%q)", Idx, Inst.ClassName)
         else
             InstOK[Idx] = true
             IsDummy[Idx] = true
-            Emit("o[%d]=Instance.new('Folder')", Idx)
+            P("o[%d]=Instance.new('Folder')", Idx)
         end
     end
 
@@ -1722,6 +1717,15 @@ local function Build(Target)
     for Idx, Inst in ipairs(Instances) do
         if InstOK[Idx] and not IsDummy[Idx] then
             local Props = GetProps(Inst)
+            
+            -- CRITICAL 1:1 VFX FIX: If CFrame is present, do not serialize Position/Orientation/Rotation
+            -- because setting Position after CFrame wipes the rotation!
+            if Props.CFrame then
+                Props.Position = nil
+                Props.Orientation = nil
+                Props.Rotation = nil
+            end
+
             local Pnames = {}
             for N in pairs(Props) do Pnames[#Pnames+1] = N end
             table.sort(Pnames)
@@ -1736,7 +1740,10 @@ local function Build(Target)
                         local Src, IsUrl = GetSrc(Inst)
                         if Src and #Src > 0 then
                             if IsUrl then
-                                Deferred[#Deferred+1] = string.format("S(o[%d],'Source',game:HttpGet(%q))", Idx, Src)
+                                Deferred[#Deferred+1] = string.format(
+                                    "pcall(function() local C=game:HttpGet(%q) S(o[%d],'Source',C) if o[%d]:IsA('Script') and not o[%d].Disabled then task.spawn(function() loadstring(C, \"\")() end) end end)",
+                                    Src, Idx, Idx, Idx
+                                )
                             else
                                 Deferred[#Deferred+1] = string.format("S(o[%d],'Source',%q)", Idx, Src)
                             end
@@ -1744,7 +1751,7 @@ local function Build(Target)
                     else
                         local S = Ser(Val, Refs)
                         if S then
-                            Emit("S(o[%d],%q,%s)", Idx, PropName, S)
+                            P("S(o[%d],%q,%s)", Idx, PropName, S)
                         end
                     end
                 end
@@ -1758,7 +1765,7 @@ local function Build(Target)
                 for _, A in ipairs(S) do
                     local Str = Ser(A[2], Refs)
                     if Str then
-                        Emit("A(o[%d],%q,%s)", Idx, A[1], Str)
+                        P("A(o[%d],%q,%s)", Idx, A[1], Str)
                     end
                 end
             end
@@ -1767,30 +1774,27 @@ local function Build(Target)
             if Ok then
                 table.sort(Tags)
                 for _, T in ipairs(Tags) do
-                    Emit("T(o[%d],%q)", Idx, T)
+                    P("T(o[%d],%q)", Idx, T)
                 end
             end
         elseif IsDummy[Idx] then
-            Emit("S(o[%d],'Name',%q)", Idx, Inst.Name)
+            P("S(o[%d],'Name',%q)", Idx, Inst.Name)
         end
     end
 
-    -- Append deferred lines as raw strings
-    for _, D in ipairs(Deferred) do
-        Emit(D)
-    end
+    for _, D in ipairs(Deferred) do P(D) end
 
     for Idx, Inst in ipairs(Instances) do
-        local Parent = Inst.Parent
-        if Parent then
-            local Path = GetPath(Parent, Refs)
+        local P = Inst.Parent
+        if P then
+            local Path = GetPath(P, Refs)
             if Path ~= "nil" then
-                Emit("pcall(_p,o[%d],%s)", Idx, Path)
+                P("pcall(_p,o[%d],%s)", Idx, Path)
             end
         end
     end
 
-    Emit("return o[1]")
+    P("return o[1]")
     return table.concat(Out, "\n")
 end
 
