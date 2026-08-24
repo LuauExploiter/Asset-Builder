@@ -2,14 +2,20 @@ local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 
 -- SafeEnum wrapper to prevent executor crashes on missing Enums
+local SafeEnumDummy = setmetatable({}, {
+    __index = function(t, k) return SafeEnumDummy end,
+    __tostring = function() return "nil" end,
+    __call = function() return nil end
+})
+
 local SafeEnum = setmetatable({}, {
     __index = function(t, k)
         local Ok, Res = pcall(function() return Enum[k] end)
-        if not Ok or not Res then return nil end
+        if not Ok or not Res then return SafeEnumDummy end
         return setmetatable({}, {
             __index = function(t2, k2)
                 local Ok2, Res2 = pcall(function() return Res[k2] end)
-                if not Ok2 or not Res2 then return nil end
+                if not Ok2 or not Res2 then return SafeEnumDummy end
                 return Res2
             end
         })
@@ -1568,10 +1574,10 @@ local function UploadScript(Src)
         })
     end)
     if Ok and Res and Res.Body then
-        local OkD, Data = pcall(function() return HttpService:JSONDecode(Res.Body) end)
-        if OkD and Data and Data.url then
+        local OkD, data = pcall(function() return HttpService:JSONDecode(Res.Body) end)
+        if OkD and data and data.url then
             task.wait(0.1)
-            return Data.url
+            return data.url
         end
     end
     return nil
