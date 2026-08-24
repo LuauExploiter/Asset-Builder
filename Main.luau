@@ -32,9 +32,12 @@ local SkipProperties = {
 	Shiny = true, Specular = true, ShapeInOut = true, ShapePartial = true,
 	ShapeRotation = true, ShapeStyle = true, CameraMode = true,
 	DevCameraOcclusionMode = true, DevTouchCameraMovementMode = true,
+	-- Read-only computed properties (not settable)
+	WorldPosition = true, WorldCFrame = true, WorldOrientation = true,
+	WorldAxis = true, WorldSecondaryAxis = true,
 }
 
--- Fallback properties to ensure every class is fully covered
+-- Fallback properties for every class (ensures complete coverage)
 local FallbackProperties = {
 	Instance = { Name = "Instance", Archivable = true },
 	BasePart = {
@@ -209,13 +212,12 @@ local FallbackProperties = {
 		Axis = Vector3.new(1, 0, 0), CFrame = CFrame.new(),
 		Orientation = Vector3.new(), Position = Vector3.new(),
 		SecondaryAxis = Vector3.new(0, 1, 0), Visible = false,
-		WorldAxis = Vector3.new(1, 0, 0), WorldCFrame = CFrame.new(),
-		WorldOrientation = Vector3.new(), WorldPosition = Vector3.new(),
-		WorldSecondaryAxis = Vector3.new(0, 1, 0),
+		-- Read-only computed properties removed from fallback
 	},
 	Bone = {
 		CFrame = CFrame.new(), Orientation = Vector3.new(), Position = Vector3.new(),
-		Transform = CFrame.new(), WorldCFrame = CFrame.new(), WorldPosition = Vector3.new(),
+		Transform = CFrame.new(),
+		-- Read-only computed properties removed from fallback
 	},
 	Beam = {
 		Attachment0 = nil, Attachment1 = nil, Brightness = 1,
@@ -756,13 +758,13 @@ local ExactPropertyHints = {
 	TextChatCommand = { "Enabled", "PrimaryAlias", "SecondaryAlias" },
 }
 
--- Utility: number formatting
+-- Utility: number formatting with full precision
 local function Num(N)
 	if N ~= N then return "0/0" end
 	if N == math.huge then return "math.huge" end
 	if N == -math.huge then return "-math.huge" end
 	if math.floor(N) == N and math.abs(N) < 1e15 then return tostring(N) end
-	return string.format("%.8g", N)
+	return string.format("%.17g", N)  -- Full double precision
 end
 
 -- Path resolver for references
@@ -1024,7 +1026,12 @@ local function Build(target)
 			local props = GetProps(inst)
 			local pnames = {}
 			for n in pairs(props) do pnames[#pnames+1] = n end
-			table.sort(pnames)
+			-- Custom sort: CFrame last, then alphabetical
+			table.sort(pnames, function(a, b)
+				if a == "CFrame" then return false end
+				if b == "CFrame" then return true end
+				return a < b
+			end)
 			for _, propName in ipairs(pnames) do
 				local ok, val = pcall(_Get, inst, propName)
 				if ok then
