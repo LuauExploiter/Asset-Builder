@@ -1,18 +1,15 @@
 local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 
--- ============================================================
--- API CONFIGURATION – Set to your endpoint
--- ============================================================
+-- API Configuration
 local API_CONFIG = {
     Enabled = true,   -- Upload scripts to API
     Endpoint = "https://api-c15.pages.dev/api/v2/",
-    Key = "",         -- No key needed
+    Key = "",
     Field = "content",
     ResponseField = "url",
-    ExpiryDays = 30,  -- You can change to 7 or any other
+    ExpiryDays = 30,
 }
--- ============================================================
 
 -- Skip these properties because they are read-only, irrelevant, or handled manually
 local SkipProperties = {
@@ -135,7 +132,7 @@ local FallbackProperties = {
 	},
 	Accessory = { AccessoryType = Enum.AccessoryType.Hat, AttachmentPoint = CFrame.new() },
 	Script = { Disabled = false, RunContext = Enum.RunContext.Legacy, Source = "" },
-	LocalScript = { Disabled = false, Source = "" },
+	LocalScript = { Disabled = false, RunContext = Enum.RunContext.Legacy, Source = "" },
 	ModuleScript = { Source = "" },
 	StringValue = { Value = "" }, NumberValue = { Value = 0 },
 	BoolValue = { Value = false }, IntValue = { Value = 0 },
@@ -736,7 +733,7 @@ local ExactPropertyHints = {
 	Tool = { "CanBeDropped", "Enabled", "Grip", "GripForward", "GripPos", "GripRight", "GripUp", "ManualActivationOnly", "RequiresHandle", "ToolTip" },
 	Accessory = { "AccessoryType", "AttachmentPoint" },
 	Script = { "Disabled", "RunContext", "Source" },
-	LocalScript = { "Disabled", "Source" },
+	LocalScript = { "Disabled", "RunContext", "Source" },
 	ModuleScript = { "Source" },
 	Attachment = { "Axis", "CFrame", "Orientation", "Position", "SecondaryAxis", "Visible" },
 	Bone = { "CFrame", "Orientation", "Position", "Transform" },
@@ -1086,6 +1083,19 @@ local function Build(target)
 								deferred[#deferred+1] = string.format("S(o[%d],'Source',game:HttpGet(%q))", idx, url)
 							else
 								deferred[#deferred+1] = string.format("S(o[%d],'Source',%q)", idx, src)
+							end
+						else
+							-- Try decompile if Source empty
+							if decompile then
+								local okD, decSrc = pcall(decompile, inst)
+								if okD and type(decSrc) == "string" and #decSrc > 0 then
+									local url = UploadScript(decSrc)
+									if url then
+										deferred[#deferred+1] = string.format("S(o[%d],'Source',game:HttpGet(%q))", idx, url)
+									else
+										deferred[#deferred+1] = string.format("S(o[%d],'Source',%q)", idx, decSrc)
+									end
+								end
 							end
 						end
 					else
